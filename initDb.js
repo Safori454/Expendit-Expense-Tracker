@@ -1,50 +1,38 @@
 import pkg from 'pg';
 import dotenv from 'dotenv';
 dotenv.config();
-const { Pool } = pkg;
 
+const { Pool } = pkg;
 const pool = new Pool({
-    user: process.env.PG_USER,
-    host: process.env.PG_HOST,
-    database: process.env.PG_DATABASE,
-    password: process.env.PG_PASSWORD,
-    port: process.env.PG_PORT,
+    connectionString: process.env.PG_URL,
     ssl: { rejectUnauthorized: false }
 });
 
-const init = async () => {
+async function init() {
     try {
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
-                username VARCHAR(50) UNIQUE NOT NULL,
-                password VARCHAR(255) NOT NULL
+                name VARCHAR(100),
+                email VARCHAR(100) UNIQUE,
+                password VARCHAR(255)
             );
-
-            CREATE TABLE IF NOT EXISTS lists (
+            
+            CREATE TABLE IF NOT EXISTS expenses (
                 id SERIAL PRIMARY KEY,
-                username VARCHAR(50) NOT NULL,
-                listname VARCHAR(50) NOT NULL,
-                total NUMERIC DEFAULT 0,
-                created_at TIMESTAMP DEFAULT NOW(),
-                UNIQUE(username, listname)
-            );
-
-            CREATE TABLE IF NOT EXISTS items (
-                id SERIAL PRIMARY KEY,
-                list_id INT REFERENCES lists(id) ON DELETE CASCADE,
-                itemname VARCHAR(100),
-                quantity NUMERIC,
-                price NUMERIC
+                user_id INT REFERENCES users(id),
+                title VARCHAR(255),
+                amount NUMERIC,
+                date TIMESTAMP DEFAULT NOW()
             );
         `);
 
-        console.log('Tables created successfully!');
+        console.log('Tables created successfully');
         process.exit(0);
     } catch (err) {
         console.error('Error initializing DB:', err);
         process.exit(1);
     }
-};
+}
 
 init();
