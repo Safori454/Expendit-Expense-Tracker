@@ -14,31 +14,26 @@ const app = express();
 const port = 3000;
 
 // PostgreSQL connection
-// const pool = new Pool({
-//     user: process.env.PG_USER,
-//     host: process.env.PG_HOST,
-//     database: process.env.PG_DATABASE,
-//     password: process.env.PG_PASSWORD,
-//     port: process.env.PG_PORT,
-//     ssl: { rejectUnauthorized: false } // required for Render
-// });
-
-// export default pool; // optional if you want to import pool elsewhere
-
+// PostgreSQL connection
 const pool = new Pool({
-    connectionString: process.env.PG_URL,
-    ssl: { rejectUnauthorized: false } // Railway requires SSL
+  user: process.env.PG_USER,
+  host: process.env.PG_HOST,
+  database: process.env.PG_DATABASE,
+  password: process.env.PG_PASSWORD,
+  port: process.env.PG_PORT,
+  ssl: {
+    rejectUnauthorized: false // Railway requires SSL
+  }
 });
 
-// Example test query
+// Test DB connection
 pool.query('SELECT NOW()', (err, res) => {
-    if (err) {
-        console.error('DB connection error:', err);
-    } else {
-        console.log('DB connected:', res.rows[0]);
-    }
+  if (err) {
+    console.error('DB connection error:', err);
+  } else {
+    console.log('DB connected:', res.rows[0]);
+  }
 });
-
 
 // Middleware
 app.use(express.static('public'));
@@ -118,24 +113,6 @@ app.post('/login/register', async (req, res) => {
             error: 'Error creating account',
             success: null
         });
-    }
-});
-
-
-
-
-
-
-app.post('/login/register', async (req, res) => {
-    const { username, password } = req.body;
-    try {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        await pool.query('INSERT INTO users (username, password) VALUES ($1,$2)', [username, hashedPassword]);
-        req.session.username = username;
-        res.redirect('/home');
-    } catch (err) {
-        console.error(err);
-        res.send("Error registering user: " + err.message);
     }
 });
 

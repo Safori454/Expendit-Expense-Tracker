@@ -3,36 +3,48 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const { Pool } = pkg;
+
 const pool = new Pool({
-    connectionString: process.env.PG_URL,
-    ssl: { rejectUnauthorized: false }
+  user: process.env.PG_USER,
+  host: process.env.PG_HOST,
+  database: process.env.PG_DATABASE,
+  password: process.env.PG_PASSWORD,
+  port: process.env.PG_PORT
 });
 
 async function init() {
-    try {
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(100),
-                email VARCHAR(100) UNIQUE,
-                password VARCHAR(255)
-            );
-            
-            CREATE TABLE IF NOT EXISTS expenses (
-                id SERIAL PRIMARY KEY,
-                user_id INT REFERENCES users(id),
-                title VARCHAR(255),
-                amount NUMERIC,
-                date TIMESTAMP DEFAULT NOW()
-            );
-        `);
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(50) UNIQUE NOT NULL,
+        password TEXT NOT NULL
+      );
+      
+      CREATE TABLE IF NOT EXISTS lists (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(50) NOT NULL REFERENCES users(username),
+        listname VARCHAR(100) NOT NULL,
+        total NUMERIC(12,2) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(username, listname)
+      );
 
-        console.log('Tables created successfully');
-        process.exit(0);
-    } catch (err) {
-        console.error('Error initializing DB:', err);
-        process.exit(1);
-    }
+      CREATE TABLE IF NOT EXISTS items (
+        id SERIAL PRIMARY KEY,
+        list_id INT NOT NULL REFERENCES lists(id) ON DELETE CASCADE,
+        itemname VARCHAR(255),
+        quantity NUMERIC(12,2),
+        price NUMERIC(12,2)
+      );
+    `);
+
+    console.log('Database initialized successfully!');
+  } catch (err) {
+    console.error('Error initializing DB:', err);
+  } finally {
+    await pool.end();
+  }
 }
 
 init();
