@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= listname %> List</title>
+    <style>
+        table { border-collapse: collapse; width: 80%; margin: 20px 0; }
+        th, td { border: 1px solid #333; padding: 8px 12px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        button { margin-right: 5px; }
+        input[readonly] { background-color: #eee; border: 1px solid #ccc; padding: 5px 10px; }
+    </style>
+</head>
+<body>
+    <h1><%= listname %></h1>
+
+    <!-- Add Item Form -->
+    <form action="/additems" method="POST">
+        <input type="text" name="itemname" placeholder="Item" required>
+        <input type="number" name="quantity" placeholder="Quantity" required>
+        <input type="number" step="0.01" name="price" placeholder="Price" required>
+        <input type="hidden" name="listname" value="<%= listname %>">
+        <button type="submit">Add Item</button>
+    </form>
+
+    <h2>Items Added:</h2>
+    <% if (!items || items.length === 0) { %>
+        <p>No items added yet.</p>
+    <% } else { %>
+        <table>
+            <tr>
+                <th>Item Name</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Total</th>
+                <th>Actions</th>
+            </tr>
+            <% items.forEach(function(item) { %>
+            <tr>
+                <td><%= item.itemname %></td>
+                <td><%= item.quantity %></td>
+                <td><%= item.price.toFixed(2) %></td>
+                <td><%= (item.quantity * item.price).toFixed(2) %></td>
+                <td>
+                    <a href="/edititem/<%= item.id %>?listname=<%= listname %>">
+                        <button type="button">Edit</button>
+                    </a>
+                    <form action="/deleteitem" method="POST" style="display:inline;">
+                        <input type="hidden" name="id" value="<%= item.id %>">
+                        <input type="hidden" name="listname" value="<%= listname %>">
+                        <button type="submit">Remove</button>
+                    </form>
+                </td>
+            </tr>
+            <% }) %>
+        </table>
+    <% } %>
+
+    <!-- Total Sum -->
+    <h3>Total of List:</h3>
+    <input type="text" value="<%= (total || 0).toFixed(2) %>" readonly>
+
+    <!-- Save List -->
+    <form action="/savelist" method="POST">
+        <input type="hidden" name="listname" value="<%= listname %>">
+        <button type="submit">Save List</button>
+    </form>
+</body>
+</html>

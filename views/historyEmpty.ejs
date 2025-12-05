@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Empty List</title>
+</head>
+<body>
+
+<h2><%= listname %> is empty</h2>
+<p>This list has no items yet.</p>
+
+<form action="/additems" method="POST">
+    <input type="hidden" name="listname" value="<%= listname %>">
+    <button type="submit">Add Items</button>
+</form>
+<form action="/home" method="GET">
+    <button type="submit">Home</button>
+</form>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expendit - <%= listname %></title>
+</head>
+<body>
+    <h1>Saved List: '<%= listname %>'</h1>
+
+    <% if (items.length > 0) { %>
+        <ul>
+            <% items.forEach((item, index) => { %>
+                <li>
+                    <%= item.itemname %> - Qty: <%= item.quantity %> - Price: <%= item.price %> - Total: <%= item.quantity * item.price %>
+                </li>
+            <% }) %>
+        </ul>
+    <% } else { %>
+        <p>No items saved in this list.</p>
+    <% } %>
+
+    <!-- Create New List -->
+    <form action="/newlist" method="post">
+        <button type="submit">Create New List</button>
+    </form>
+
+    <!-- Home -->
+    <form action="/home" method="GET" style="display:inline;">
+        <button type="submit">Home</button>
+    </form>
+</body>
+</html>

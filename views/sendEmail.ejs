@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expendit</title>
+    <style>
+        button { padding: 5px 10px; margin: 2px; }
+    </style>
+</head>
+<body>
+<h1>Export Your List & Send via Email</h1>
+
+<!-- Step 1: Download Excel -->
+<form id="exportForm" method="POST" action="/cvtExcel/download">
+    <label for="listname">Select List (leave empty for all):</label>
+    <select name="listname" id="listname">
+        <option value="">All Lists</option>
+        <% lists.forEach(list => { %>
+            <option value="<%= list.listname %>"><%= list.listname %></option>
+        <% }); %>
+    </select>
+    <br><br>
+    <button type="submit">Download Excel</button>
+</form>
+
+<br><br>
+
+<!-- Step 2: Open Email App -->
+<p>After downloading the Excel, click the button below to open your email app and manually attach the file:</p>
+<button id="openMailBtn">Open Email App</button>
+
+<script>
+document.getElementById("openMailBtn").addEventListener("click", function() {
+    const subject = encodeURIComponent("Expense List Export");
+    const body = encodeURIComponent("Hi,\n\nAttached is the exported expense list. Please check.\n\n- Expendit App");
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+});
+</script>
+
+<br><br>
+
+<form action="/home" method="GET">
+    <button type="submit">Home</button>
+</form>
+
+</body>
+</html>

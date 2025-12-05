@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Item</title>
+    <style>
+        input { margin-bottom: 10px; display: block; }
+        button { margin-right: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Edit Item for List: <%= listname %></h1>
+
+    <form action="/edititem/update" method="POST">
+        <input type="hidden" name="id" value="<%= item.id %>">
+        <input type="hidden" name="listname" value="<%= listname %>">
+
+        <label>Item Name:</label>
+        <input type="text" name="itemname" value="<%= item.itemname %>" required>
+
+        <label>Quantity:</label>
+        <input type="number" name="quantity" value="<%= item.quantity %>" required>
+
+        <label>Price:</label>
+        <input type="number" step="0.01" name="price" value="<%= item.price %>" required>
+
+        <button type="submit">Update Item</button>
+    </form>
+
+    <a href="/list?listname=<%= listname %>">
+        <button type="button">Back to List</button>
+    </a>
+</body>
+</html>

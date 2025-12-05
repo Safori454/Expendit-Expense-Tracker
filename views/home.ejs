@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expendit</title>
+    <style>
+        button { padding: 5px 10px; margin: 2px; }
+    </style>
+</head>
+<body>
+    <% if (username) { %>
+    <h1>Hello <%= username %>, Welcome to Expendit</h1>
+<% } else { %>
+    <h1>Welcome to Expendit</h1>
+<% } %>
+
+<!-- Add New Expense -->
+<form method="POST" action="/newlist">
+    <button type="submit">Add New Expense</button>
+</form>
+
+<!-- History -->
+<form method="GET" action="/history">
+    <button type="submit">History</button>
+</form>
+
+<!-- Convert to Excel -->
+<form method="POST" action="/cvtExcel">
+    <button type="submit">Convert to Excel File</button>
+</form>
+
+<!-- Logout -->
+<form method="POST" action="/logout">
+    <button type="submit">Logout</button>
+</form>
+
+</body>
+</html>

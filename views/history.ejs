@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expendit</title>
+    <style>
+        table { border-collapse: collapse; width: 100%; margin-top: 0px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+        button { padding: 5px 10px; margin: 2px; }
+    </style>
+</head>
+<body>
+    <h1>History</h1>
+
+    <!-- Clear History -->
+    <form action="/history/clear" method="POST" onsubmit="return confirm('Are you sure you want to clear all history?');">
+        <button type="submit">Clear History</button>
+    </form>
+
+    <!-- Back Home -->
+    <form action="/home" method="GET" style="display:inline;">
+        <button type="submit">Home</button>
+    </form>
+
+    <% if (!lists || lists.length === 0) { %>
+        <p>No saved lists yet.</p>
+    <% } else { %>
+        <table>
+            <tr>
+                <th>List Name</th>
+                <th>Number Of Items</th>
+                <th>Actions</th>
+            </tr>
+
+            <% lists.forEach(function(list) { %>
+                <tr>
+                    <td><%= list.listname %></td>
+                    <td><%= list.items ? list.items.length : 0 %> </td>
+                    <td>
+                        <!-- View List -->
+                        <form action="/history/data" method="POST" style="display:inline;">
+                            <input type="hidden" name="listing" value="<%= list.listname %>">
+                            <button type="submit">View</button>
+                        </form>
+
+                        <!-- Delete List -->
+                        <form action="/deletelist" method="POST" style="display:inline;"
+                              onsubmit="return confirm('Delete this entire list?');">
+                            <input type="hidden" name="listname" value="<%= list.listname %>">
+                            <button type="submit" class="delete">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            <% }); %>
+        </table>
+    <% } %>
+</body>
+</html>
+

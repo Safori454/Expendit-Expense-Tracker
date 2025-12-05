@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expendit</title>
+    <style>
+        button { padding: 5px 10px; margin: 2px; }
+    </style>
+</head>
+    <h1>Export to Excel</h1>
+
+<form action="/cvtExcel/download" method="POST">
+    <label for="listname">Select list to export:</label>
+    <select name="listname" id="listname">
+        <option value="">All Lists</option>
+        <% lists.forEach(list => { %>
+            <option value="<%= list.listname %>"><%= list.listname %></option>
+        <% }); %>
+    </select>
+    <button type="submit">Export to Excel</button>
+</form>
+
+<form action="/cvtExcel/email" method="GET">
+    <label for="email">Send via Email</label>
+    <button type="submit">Send Email</button>   
+</form>
+
+<br>
+<br>
+<form action="/home" method="GET">
+    <button type="submit">Home</button>
+</form>
+
+</body>
+</html>

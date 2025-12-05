@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expendit - Create List</title>
+    <style>
+        button { padding: 5px 10px; margin: 2px; }
+    </style>
+</head>
+<body>
+
+<!-- CASE 1: List has been created -->
+<% if (listname && !editMode) { %>
+    <form action="/list" method="POST">
+        <p style="color: green;">"<%= listname %>" List created successfully!</p>
+        <input type="hidden" name="listname" value="<%= listname %>">
+        <button type="submit">Go to List</button>
+    </form>
+
+    <form action="/editsheet" method="POST">
+        <input type="hidden" name="listname" value="<%= listname %>">
+        <button type="submit">Edit List Name</button>
+    </form>
+<% } %>
+
+
+<!-- CASE 2: Editing existing list name -->
+<% if (editMode) { %>
+    <h1>Edit List Name</h1>
+
+    <form action="/updatesheet" method="POST">
+        <!-- Keep old name -->
+        <input type="hidden" name="oldname" value="<%= listname %>">
+
+        <label for="newname">Enter new list name:</label>
+        <input type="text" id="newname" name="newname" required value="<%= listname %>" autofocus autocomplete="off">
+
+        <button type="submit">Update</button>
+    </form>
+
+<% } %>
+
+
+<!-- CASE 3: Create a new list -->
+<% if (!listname && !editMode) { %>
+    <h1>Create a New List</h1>
+
+    <form action="/newsheet" method="POST">
+        <label for="listname">Enter the name of the list:</label>
+        <input type="text" id="listname" name="listname" required placeholder="e.g Groceries" autofocus autocomplete="off">
+        <button type="submit">Create</button>
+    </form>
+<% } %>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    if (editMode) { 
+        const input = document.getElementById("newname");
+        if (input) {
+            // Focus input
+            input.focus();
+
+            // First select all text
+            input.select();
+
+            // Then move cursor to the end
+            const length = input.value.length;
+            input.setSelectionRange(length, length);
+        }
+   } 
+
+});
+</script>
+
+</body>
+</html>

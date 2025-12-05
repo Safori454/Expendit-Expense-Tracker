@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><%= list.listname %> History</title>
+<style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    h2 { margin-bottom: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+    th { background-color: #f4f4f4; font-weight: bold; }
+    input { width: 95%; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
+    .btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; margin: 2px; }
+    .update-btn { background-color: #4CAF50; color: white; }
+    .remove-btn { background-color: #e60000; color: white; }
+    .update-btn:hover { background-color: #45a049; }
+    .remove-btn:hover { background-color: #cc0000; }
+    #addItemForm { display: none; margin-top: 20px; }
+</style>
+</head>
+
+<body>
+
+<h2><%= list.listname %> History</h2>
+<p>Created: <%= list.created_at ? new Date(list.created_at).toLocaleString() : "Unknown" %></p>
+
+<% if (!list.items || list.items.length === 0) { %>
+
+    <p>This list is empty.</p>
+
+<% } else { %>
+
+<!-- UPDATE ALL ITEMS -->
+<form action="/history/updateallitems" method="POST">
+    <input type="hidden" name="listname" value="<%= list.listname %>">
+
+    <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Total</th>
+                <th>Remove</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <% list.items.forEach((item, index) => { %>
+            <tr>
+                <td>
+                    <input type="hidden" name="items[<%= index %>][id]" value="<%= item.id %>">
+                    <input type="text" name="items[<%= index %>][itemname]" value="<%= item.itemname %>" required>
+                </td>
+
+                <td>
+                    <input type="number" name="items[<%= index %>][quantity]" value="<%= item.quantity %>" required>
+                </td>
+
+                <td>
+                    <input type="number" name="items[<%= index %>][price]" step="0.01" value="<%= item.price %>" required>
+                </td>
+
+                <td>
+                    GH₵ <%= item.total ? item.total.toFixed(2) : "0.00" %>
+                </td>
+
+                <td>
+                    <button 
+                        type="button" 
+                        class="btn remove-btn"
+                        onclick="removeItem('<%= item.id %>', '<%= list.listname %>')"
+                    >Remove</button>
+                </td>
+            </tr>
+            <% }) %>
+        </tbody>
+    </table>
+
+    <button type="submit" class="btn update-btn" style="margin-top: 10px;">Update All</button>
+</form>
+
+<!-- REMOVE ALL -->
+<form action="/history/removeallitems" method="POST" style="margin-top: 10px;"
+      onsubmit="return confirm('Remove ALL items?');">
+    <input type="hidden" name="listname" value="<%= list.listname %>">
+    <button type="submit" class="btn remove-btn">Remove All</button>
+</form>
+
+<h3>Total of the list: GH₵ <%= totalSum.toFixed(2) %></h3>
+
+<% } %>
+
+<!-- BACK + ADD -->
+<a href="/history">
+    <button class="btn">Back to All History</button>
+</a>
+
+<button id="showAddItemBtn" class="btn">Add New Item</button>
+
+<!-- ADD ITEM FORM -->
+<form id="addItemForm" action="/history/additem" method="POST">
+    <input type="hidden" name="listname" value="<%= list.listname %>">
+    <input type="text" name="itemname" placeholder="Item Name" required>
+    <input type="number" name="quantity" placeholder="Quantity" required>
+    <input type="number" name="price" step="0.01" placeholder="Price" required>
+    <button type="submit" class="btn update-btn">Add to List</button>
+</form>
+
+<script>
+    const addBtn = document.getElementById("showAddItemBtn");
+    const addForm = document.getElementById("addItemForm");
+
+    addBtn.addEventListener("click", () => {
+        addForm.style.display =
+            addForm.style.display === "none" ? "block" : "none";
+    });
+
+    // AJAX remove (no nested form issues)
+    function removeItem(id, listname) {
+        if (!confirm("Remove this item?")) return;
+
+        fetch("/history/deleteitem", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `id=${id}&listname=${encodeURIComponent(listname)}`
+        })
+        .then(() => location.reload());
+    }
+</script>
+
+</body>
+</html>
