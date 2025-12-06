@@ -14,7 +14,6 @@ const app = express();
 const port = 3000;
 
 // PostgreSQL connection
-// PostgreSQL connection
 const pool = new Pool({
   user: process.env.PG_USER,
   host: process.env.PG_HOST,
@@ -127,7 +126,7 @@ app.post('/login/home', async (req, res) => {
         );
 
         if (result.rows.length === 0) {
-            return res.render('index.ejs', { error: 'User not found' });
+            return res.render('index.ejs', { error: 'User not found. Sign Up User!' });
         }
 
         const user = result.rows[0];
@@ -135,7 +134,7 @@ app.post('/login/home', async (req, res) => {
         // Compare hashed password
         const match = await bcrypt.compare(password, user.password);
         if (!match) {
-            return res.render('index.ejs', { error: 'Invalid password' });
+            return res.render('index.ejs', { error: 'Invalid password. Try Again' });
         }
 
         // Save user in session
@@ -168,7 +167,6 @@ app.get('/logout', (req, res) => {
 });
 
 // --- Lists ---
-
 // Create list
 // Show create list page
 app.post('/newlist', (req, res) => {
@@ -197,7 +195,40 @@ app.post('/newsheet', async (req, res) => {
         res.send("Error creating list: " + err.message);
     }
 });
+app.post('/editsheet',  async (req, res) => {
+    const { listname } = req.body;
+    const username = req.session.username;
+    if (!username) return res.redirect('/');
 
+    const result=await pool.query(
+        'SELECT * FROM lists WHERE username=$1 AND listname=$2',
+        [username, listname]
+    );
+
+    res.render('createlist.ejs', { listname, editMode: true });
+    
+});
+
+app.post('/updatesheet', async (req, res) => {
+    const { oldname, listname } = req.body;
+    const username = req.session.username;
+    if (!username) return res.redirect('/');
+
+    try {
+        // Insert list for this user, ensure listname unique per user
+        await pool.query(
+            `UPDATE lists SET listname=$1 where username=$2 AND listname=$3`,
+            [listname, username, oldname]
+        );
+        res.render('createlist.ejs', { listname, editMode: false });
+    } catch (err) {
+        if (err.code === '23505') { // unique violation
+            return res.send("You already have a list with this name!");
+        }
+        console.error(err);
+        res.send("Error creating list: " + err.message);
+    }
+});
 // View list
 // GET route to view a list
 app.get('/list', async (req, res) => {
@@ -648,11 +679,11 @@ app.post('/history/additem', async (req, res) => {
 });
 
 // 4️⃣ Delete item from history list
-app.post('/history/deleteitem', async (req, res) => {
+app.post('/history/deletelist', async (req, res) => {
     const username = req.session.username;
     const { id, listname } = req.body;
     if (!username) return res.redirect('/');
-    if (!listname || !id) return res.send("Missing list or item ID");
+    if (!listname) return res.send("Missing list or item ID");
 
     try {
         const listResult = await pool.query(
@@ -664,23 +695,34 @@ app.post('/history/deleteitem', async (req, res) => {
         const list = listResult.rows[0];
 
         await pool.query(
-            'DELETE FROM items WHERE id=$1 AND list_id=$2',
-            [Number(id), list.id]
+            'DELETE FROM lists WHERE listname=$1',
+            [list.listname]
         );
-
-        // Update list total
-        await pool.query(
-            'UPDATE lists SET total = (SELECT COALESCE(SUM(quantity*price),0) FROM items WHERE list_id=$1) WHERE id=$1',
-            [list.id]
-        );
-
-        res.redirect('/history/data?listname=' + encodeURIComponent(listname));
-
+        res.redirect(`/history`);
     } catch (err) {
         console.error(err);
         res.send("Error deleting item: " + err.message);
     }
 });
+
+app.post('/history/clear', async (req, res) => {
+    const username = req.session.username;
+    const { id, listname } = req.body;
+    if (!username) return res.redirect('/');
+
+
+    try {
+        await pool.query(
+            'DELETE FROM lists WHERE username=$1',
+            [username]
+        );
+        res.redirect(`/history`);
+    } catch (err) {
+        console.error(err);
+        res.send("Error deleting item: " + err.message);
+    }
+});
+
 
 // 5️⃣ Edit/update item in history
 app.post('/history/edititem/update', async (req, res) => {
@@ -745,6 +787,35 @@ app.post('/history/updateallitems', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.send('Server error: ' + err.message);
+    }
+});
+
+app.post('/history/removeallitems', async (req, res) => {
+    const { listname } = req.body;
+    const username = req.session.username;
+
+    if (!username) return res.redirect('/');
+
+    try {
+        // 1. Get the list_id
+        const listRes = await pool.query(
+            "SELECT id FROM lists WHERE username=$1 AND listname=$2",
+            [username, listname]
+        );
+
+        if (listRes.rowCount === 0) {
+            return res.send("List not found");
+        }
+
+        const list_id = listRes.rows[0].id;
+
+        // 2. Delete all items for this list
+        await pool.query("DELETE FROM items WHERE list_id=$1", [list_id]);
+
+        res.redirect(`/history/data?listname=${encodeURIComponent(listname)}`);
+    } catch (err) {
+        console.error(err);
+        res.send('Error deleting items: ' + err.message);
     }
 });
 

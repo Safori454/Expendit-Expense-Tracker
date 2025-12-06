@@ -113,10 +113,12 @@ button{
         </label>
         <label>Password
             <input type="password" name="password" required>
-        </label>
-
+        </label>  
         <div>
             <button type="submit" formaction="/login/home">Sign In</button>
+            <% if (error) { %>
+                <p style="color:red;text-align:center; margin-top: 5px;"><%= error %></p>
+            <% } %>
             <button type="button" onclick="window.location.href='/login/signup'">Sign Up</button>
         </div>
     </form>

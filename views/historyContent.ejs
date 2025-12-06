@@ -10,13 +10,14 @@
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
     th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
     th { background-color: #f4f4f4; font-weight: bold; }
-    input { width: 95%; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
+    input { width: 25%; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
     .btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; margin: 2px; }
     .update-btn { background-color: #4CAF50; color: white; }
-    .remove-btn { background-color: #e60000; color: white; }
+    .remove-btn { background-color: #e60000; color: white; display: inline;}
     .update-btn:hover { background-color: #45a049; }
     .remove-btn:hover { background-color: #cc0000; }
     #addItemForm { display: none; margin-top: 20px; }
+    .in { width: 95%; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
 </style>
 </head>
 
@@ -51,15 +52,15 @@
             <tr>
                 <td>
                     <input type="hidden" name="items[<%= index %>][id]" value="<%= item.id %>">
-                    <input type="text" name="items[<%= index %>][itemname]" value="<%= item.itemname %>" required>
+                    <input type="text" name="items[<%= index %>][itemname]" value="<%= item.itemname %>" required class="in input">
                 </td>
 
                 <td>
-                    <input type="number" name="items[<%= index %>][quantity]" value="<%= item.quantity %>" required>
+                    <input type="number" name="items[<%= index %>][quantity]" value="<%= item.quantity %>" required class="in input">
                 </td>
 
                 <td>
-                    <input type="number" name="items[<%= index %>][price]" step="0.01" value="<%= item.price %>" required>
+                    <input type="number" name="items[<%= index %>][price]" step="0.01" value="<%= item.price %>" required class="in input">
                 </td>
 
                 <td>
@@ -77,8 +78,7 @@
             <% }) %>
         </tbody>
     </table>
-
-    <button type="submit" class="btn update-btn" style="margin-top: 10px;">Update All</button>
+    <button type="submit" class="btn update-btn" style="margin-top: 10px; display: inline;">Update All</button>
 </form>
 
 <!-- REMOVE ALL -->
@@ -93,10 +93,7 @@
 <% } %>
 
 <!-- BACK + ADD -->
-<a href="/history">
-    <button class="btn">Back to All History</button>
-</a>
-
+<a href="/history"><button class="btn">Back to All History</button></a>
 <button id="showAddItemBtn" class="btn">Add New Item</button>
 
 <!-- ADD ITEM FORM -->

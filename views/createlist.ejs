@@ -18,7 +18,7 @@
         <button type="submit">Go to List</button>
     </form>
 
-    <form action="/editsheet" method="POST">
+    <form action="/editsheet" method="post">
         <input type="hidden" name="listname" value="<%= listname %>">
         <button type="submit">Edit List Name</button>
     </form>
@@ -34,7 +34,7 @@
         <input type="hidden" name="oldname" value="<%= listname %>">
 
         <label for="newname">Enter new list name:</label>
-        <input type="text" id="newname" name="newname" required value="<%= listname %>" autofocus autocomplete="off">
+        <input type="text" id="newname" name="listname" required value="<%= listname %>" autofocus autocomplete="off">
 
         <button type="submit">Update</button>
     </form>

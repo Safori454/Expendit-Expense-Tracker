@@ -45,7 +45,7 @@
                         </form>
 
                         <!-- Delete List -->
-                        <form action="/deletelist" method="POST" style="display:inline;"
+                        <form action="/history/deletelist" method="POST" style="display:inline;"
                               onsubmit="return confirm('Delete this entire list?');">
                             <input type="hidden" name="listname" value="<%= list.listname %>">
                             <button type="submit" class="delete">Delete</button>
