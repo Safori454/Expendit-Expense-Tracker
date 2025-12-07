@@ -10,33 +10,39 @@
 </head>
 <body>
     <div style="background-color: yellow; padding: 10px; text-align: center;">
-  ⚠️ This is a testing version. Features may change. ⚠️
-</div>
+        ⚠️ This is a testing version. Features may change. ⚠️
+    </div>
+
     <% if (username) { %>
-    <h1>Hello <%= username %>, Welcome to Expendit</h1>
-<% } else { %>
-    <h1>Welcome to Expendit</h1>
-<% } %>
+        <h1>Hello <%= username %>, Welcome to Expendit</h1>
+    <% } else { %>
+        <h1>Welcome to Expendit</h1>
+    <% } %>
 
-<!-- Add New Expense -->
-<form method="POST" action="/newlist">
-    <button type="submit">Add New Expense</button>
-</form>
+    <!-- Add New Expense -->
+    <form method="POST" action="/newlist">
+        <button type="submit">Add New Expense</button>
+    </form>
 
-<!-- History -->
-<form method="GET" action="/history">
-    <button type="submit">History</button>
-</form>
+    <!-- History -->
+    <form method="GET" action="/history">
+        <button type="submit">History</button>
+    </form>
 
-<!-- Convert to Excel -->
-<form method="POST" action="/cvtExcel">
-    <button type="submit">Convert to Excel File</button>
-</form>
+    <!-- Reminders -->
+    <form method="GET" action="/reminders">
+        <button type="submit">Reminders</button>
+    </form>
 
-<!-- Logout -->
-<form method="get" action="/logout">
-    <button type="submit">Logout</button>
-</form>
+    <!-- Convert to Excel -->
+    <form method="POST" action="/cvtExcel">
+        <button type="submit">Convert to Excel File</button>
+    </form>
+
+    <!-- Logout -->
+    <form method="get" action="/logout">
+        <button type="submit">Logout</button>
+    </form>
 
 </body>
 </html>

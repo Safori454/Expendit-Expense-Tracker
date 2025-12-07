@@ -8,6 +8,10 @@
 <body>
     <h1>'<%= listname %>' List Saved Successfully</h1>
 
+    <form method="post" action="/setreminder">
+        <input type="hidden" name="listname" value="<%= listname %>">
+        <button type="submit">Set Reminder</button>
+    </form>
     <!-- View List -->
     <form method="GET" action="/viewsaved">
         <input type="hidden" name="listname" value="<%= listname %>">

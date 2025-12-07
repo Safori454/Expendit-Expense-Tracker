@@ -16,6 +16,10 @@
     .remove-btn { background-color: #e60000; color: white; display: inline;}
     .update-btn:hover { background-color: #45a049; }
     .remove-btn:hover { background-color: #cc0000; }
+    .addnew-btn { background-color: #007bff; color: white;}
+    .addnew-btn:hover { background-color: #00c6ff; }
+    .back-btn { background-color: #f59e0b; color: white;}
+    .back-btn:hover { background-color: #f59e6b; }
     #addItemForm { display: none; margin-top: 20px; }
     .in { width: 95%; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
 </style>
@@ -80,7 +84,6 @@
     </table>
     <button type="submit" class="btn update-btn" style="margin-top: 10px; display: inline;">Update All</button>
 </form>
-
 <!-- REMOVE ALL -->
 <form action="/history/removeallitems" method="POST" style="margin-top: 10px;"
       onsubmit="return confirm('Remove ALL items?');">
@@ -88,13 +91,13 @@
     <button type="submit" class="btn remove-btn">Remove All</button>
 </form>
 
-<h3>Total of the list: GH₵ <%= totalSum.toFixed(2) %></h3>
-
+<!-- <h3>Total of the list: GH₵ <%= totalSum.toFixed(2) %></h3> -->
+<div style="float: right; font-size: large;"><Label>'<%= list.listname %>' Total: GH₵  <input type="text" value="<%= (totalSum || 0).toFixed(2) %>" readonly></Label></div>
 <% } %>
 
 <!-- BACK + ADD -->
-<a href="/history"><button class="btn">Back to All History</button></a>
-<button id="showAddItemBtn" class="btn">Add New Item</button>
+<a href="/history"><button class="btn back-btn">Back to All History</button></a>
+<button id="showAddItemBtn" class="btn addnew-btn">Add New Item</button>
 
 <!-- ADD ITEM FORM -->
 <form id="addItemForm" action="/history/additem" method="POST">

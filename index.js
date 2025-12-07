@@ -7,8 +7,17 @@ import nodemailer from 'nodemailer';
 import pkg from 'pg';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
-dotenv.config();
+import PDFDocument from 'pdfkit';
+import fs from 'fs';
+import path from 'path';
+import cron from 'node-cron';
+import axios from 'axios';
+import { fileURLToPath } from 'url';
 
+
+dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const { Pool } = pkg;
 const app = express();
 const port = 3000;
@@ -21,7 +30,7 @@ const pool = new Pool({
   password: process.env.PG_PASSWORD,
   port: process.env.PG_PORT,
   ssl: {
-    rejectUnauthorized: false // Railway requires SSL
+    rejectUnauthorized: false 
   }
 });
 
@@ -52,6 +61,96 @@ app.use((req, res, next) => {
     res.locals.username = req.session.username || null;
     next();
 });
+export const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EXPENDIT_EMAIL,
+    pass: process.env.EXPENDIT_PASSWORD
+  }
+});
+
+transporter.verify((err, success) => {
+  if (err) console.error('Email transporter error:', err);
+  else console.log('Email transporter ready');
+});
+
+
+// Generates a PDF in /tmp and returns the file path
+async function generateListPDF(listName, items, message) {
+  return new Promise((resolve, reject) => {
+    try {
+      const tmpDir = path.join(__dirname, "../tmp");
+      if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+
+      const filePath = path.join(
+        tmpDir,
+        `${listName.replace(/\s+/g, "_")}_${Date.now()}.pdf`
+      );
+
+      const doc = new PDFDocument({ margin: 50, size: "A4" });
+      const stream = fs.createWriteStream(filePath);
+      doc.pipe(stream);
+
+      // Title
+      doc.fontSize(20).text(listName, { align: "center" });
+      doc.moveDown();
+      doc.fontSize(12).text(`Message: ${message}`, { align: "left" });
+      doc.moveDown(1);
+
+      // Table headers
+      const tableTop = doc.y;
+      const itemX = 50;
+      const qtyX = 250;
+      const priceX = 300;
+      const totalX = 400;
+
+      doc.font("Helvetica-Bold").text("Item", itemX, tableTop);
+      doc.text("Qty", qtyX, tableTop);
+      doc.text("Price", priceX, tableTop);
+      doc.text("Total", totalX, tableTop);
+      doc.moveDown(0.5);
+      doc.moveTo(itemX, doc.y).lineTo(500, doc.y).stroke();
+
+      // Table content
+      let grandTotal = 0;
+      items.forEach((item) => {
+        const y = doc.y + 5;
+
+        const name = item.itemname || "-";
+        const quantity = Number(item.quantity) || 0;
+        const price = Number(item.price) || 0;
+        const total = quantity * price;
+        grandTotal += total;
+
+        doc.font("Helvetica").text(name, itemX, y);
+        doc.text(quantity, qtyX, y);
+        doc.text(price.toFixed(2), priceX, y);
+        doc.text(total.toFixed(2), totalX, y);
+        doc.moveDown(1);
+      });
+
+      // Grand total
+      doc.moveDown(1);
+      doc.font("Helvetica-Bold").text(
+        `Grand Total: ${grandTotal.toFixed(2)}`,
+        totalX,
+        doc.y,
+        { align: "right" }
+      );
+
+      // Footer
+      doc.moveDown(2);
+      doc.fontSize(10).text("Powered by Expendit", { align: "center", opacity: 0.5 });
+
+      doc.end();
+
+      stream.on("finish", () => resolve(filePath));
+      stream.on("error", (err) => reject(err));
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
 
 // --- Routes ---
 
@@ -533,7 +632,7 @@ app.get('/viewsaved', async (req, res) => {
 // HISTORY ROUTES
 // ==============================
 
-// 1️⃣ View all history
+//View all history
 app.get('/history', async (req, res) => {
     const username = req.session.username;
     if (!username) return res.redirect('/');
@@ -559,7 +658,7 @@ app.get('/history', async (req, res) => {
     }
 });
 
-// 2️⃣ View single history list (GET)
+// View single history list (GET)
 app.get('/history/data', async (req, res) => {
     const username = req.session.username;
     const { listname } = req.query;
@@ -635,7 +734,7 @@ app.post('/history/data', async (req, res) => {
 });
 
 
-// 3️⃣ Add item to history list
+// Add item to history list
 app.post('/history/additem', async (req, res) => {
     const username = req.session.username;
     const { listname, itemname, quantity, price } = req.body;
@@ -678,7 +777,7 @@ app.post('/history/additem', async (req, res) => {
     }
 });
 
-// 4️⃣ Delete item from history list
+// Delete item from history list
 app.post('/history/deletelist', async (req, res) => {
     const username = req.session.username;
     const { id, listname } = req.body;
@@ -695,9 +794,14 @@ app.post('/history/deletelist', async (req, res) => {
         const list = listResult.rows[0];
 
         await pool.query(
-            'DELETE FROM lists WHERE listname=$1',
-            [list.listname]
-        );
+    'DELETE FROM items WHERE list_id=$1',
+    [list.id]
+);
+await pool.query(
+    'DELETE FROM lists WHERE id=$1 AND username=$2',
+    [list.id, username]
+);
+
         res.redirect(`/history`);
     } catch (err) {
         console.error(err);
@@ -712,10 +816,9 @@ app.post('/history/clear', async (req, res) => {
 
 
     try {
-        await pool.query(
-            'DELETE FROM lists WHERE username=$1',
-            [username]
-        );
+        await pool.query('DELETE FROM items WHERE list_id IN (SELECT id FROM lists WHERE username=$1)', [username]);
+await pool.query('DELETE FROM lists WHERE username=$1', [username]);
+
         res.redirect(`/history`);
     } catch (err) {
         console.error(err);
@@ -724,7 +827,7 @@ app.post('/history/clear', async (req, res) => {
 });
 
 
-// 5️⃣ Edit/update item in history
+// Edit/update item in history
 app.post('/history/edititem/update', async (req, res) => {
     const username = req.session.username;
     const { id, listname, itemname, quantity, price } = req.body;
@@ -758,7 +861,7 @@ app.post('/history/edititem/update', async (req, res) => {
     }
 });
 
-// 6️⃣ Update all items at once
+//  Update all items at once
 app.post('/history/updateallitems', async (req, res) => {
     try {
         const username = req.session.username;
@@ -790,6 +893,34 @@ app.post('/history/updateallitems', async (req, res) => {
     }
 });
 
+// Delete a single item
+app.post("/history/deleteitem", async (req, res) => {
+    try {
+        const { id, listname } = req.body;
+
+        if (!id) return res.status(400).send("Item ID required");
+
+        await pool.query("DELETE FROM items WHERE id = $1", [id]);
+
+        // Optionally, recalculate list total
+        const totalRes = await pool.query(
+            "SELECT SUM(quantity * price) AS total FROM items WHERE list_id = (SELECT id FROM lists WHERE listname = $1)",
+            [listname]
+        );
+        const newTotal = totalRes.rows[0].total || 0;
+
+        await pool.query(
+            "UPDATE lists SET total = $1 WHERE listname = $2",
+            [newTotal, listname]
+        );
+
+        res.sendStatus(200); // success
+    } catch (err) {
+        console.error(err);
+        res.sendStatus(500);
+    }
+});
+
 app.post('/history/removeallitems', async (req, res) => {
     const { listname } = req.body;
     const username = req.session.username;
@@ -797,7 +928,7 @@ app.post('/history/removeallitems', async (req, res) => {
     if (!username) return res.redirect('/');
 
     try {
-        // 1. Get the list_id
+        //  Get the list_id
         const listRes = await pool.query(
             "SELECT id FROM lists WHERE username=$1 AND listname=$2",
             [username, listname]
@@ -809,7 +940,7 @@ app.post('/history/removeallitems', async (req, res) => {
 
         const list_id = listRes.rows[0].id;
 
-        // 2. Delete all items for this list
+        //  Delete all items for this list
         await pool.query("DELETE FROM items WHERE list_id=$1", [list_id]);
 
         res.redirect(`/history/data?listname=${encodeURIComponent(listname)}`);
@@ -818,6 +949,329 @@ app.post('/history/removeallitems', async (req, res) => {
         res.send('Error deleting items: ' + err.message);
     }
 });
+function isPastDateTime(date, time) {
+    const chosen = new Date(`${date} ${time}`);
+    const now = new Date();
+    return chosen <= now;
+}
+
+// Set reminder routes
+app.post('/setreminder', async (req, res) => {
+    const { listname } = req.body;
+    res.redirect(`/list/set-reminder?listname=${encodeURIComponent(listname)}`);
+});
+app.get('/list/set-reminder', async (req, res) => {
+    const username = req.session.username;
+    const { listname } = req.query;
+
+    if (!username) return res.redirect('/');
+
+    res.render('setReminder', { listname });
+});
+app.post('/list/set-reminder', async (req, res) => {
+    const username = req.session.username;
+    const { listname, date, time, message, email } = req.body;
+    console.log(listname, message, date, time, email);
+
+    if (!username) return res.redirect('/');
+    if (!email) return res.send("❗ Please provide an email address for the reminder.");
+
+    // ❌ Prevent past date/time
+    if (isPastDateTime(date, time)) {
+        return res.send("❗ Invalid reminder: You cannot set a reminder in the past.");
+    }
+
+    try {
+        const listRes = await pool.query(
+            "SELECT id FROM lists WHERE username=$1 AND listname=$2",
+            [username, listname]
+        );
+
+        if (listRes.rowCount === 0) return res.send("List not found");
+
+        const list_id = listRes.rows[0].id;
+        const finalMessage = message?.trim() || `Reminder for list: ${listname}`;
+        const remind_at = `${date} ${time}`;
+
+        await pool.query(
+            "INSERT INTO reminders (list_id, username, remind_at, message, email) VALUES ($1, $2, $3, $4, $5)",
+            [list_id, username, remind_at, finalMessage, email]
+        );
+
+        res.redirect('/reminders');
+    } catch (err) {
+        console.error(err);
+        res.send("Error setting reminder: " + err.message);
+    }
+});
+
+
+
+cron.schedule('* * * * *', async () => {
+    console.log('Checking reminders...');
+    await axios.get('http://localhost:3000/cron/check-reminders');
+});
+
+
+app.get("/cron/check-reminders", async (req, res) => {
+  console.log("CRON route hit");
+
+  try {
+    const remindersRes = await pool.query(`
+      SELECT r.id, r.list_id, r.username, r.remind_at, r.sent, r.message, r.email,
+             l.listname
+      FROM reminders r
+      JOIN lists l ON r.list_id = l.id
+      WHERE r.sent = false AND r.remind_at <= NOW()
+    `);
+
+    const reminders = remindersRes.rows;
+
+    for (const row of reminders) {
+      // Fetch items for this list
+      const itemsRes = await pool.query(
+        "SELECT itemname, quantity, price FROM items WHERE list_id = $1",
+        [row.list_id]
+      );
+      const items = itemsRes.rows;
+
+      // Generate PDF
+      const pdfPath = await generateListPDF(row.listname, items, row.message);
+
+      // Send email with PDF attachment
+      try {
+        await transporter.sendMail({
+          from: process.env.SMTP_EMAIL,
+          to: row.email,
+          subject: `Reminder: ${row.listname}`,
+          text: row.message,
+          attachments: [{ filename: `${row.listname}.pdf`, path: pdfPath }],
+        });
+        console.log("Email sent to", row.email);
+
+        // Mark reminder as sent
+        await pool.query("UPDATE reminders SET sent = true WHERE id = $1", [row.id]);
+
+        // Delete PDF after sending
+        fs.unlink(pdfPath, (err) => {
+          if (err) console.error("Failed to delete PDF:", err);
+        });
+      } catch (err) {
+        console.error("Failed to send email to", row.email, err);
+      }
+    }
+
+    res.send("Cron check completed");
+  } catch (err) {
+    console.error(err);
+    res.status(500).send(err.message);
+  }
+});
+
+
+app.get('/reminders', async (req, res) => {
+    const username = req.session.username;
+    if (!username) return res.redirect('/');
+
+    try {
+        // Get all reminders for the user with list name
+        const result = await pool.query(`
+            SELECT r.id, r.remind_at, r.sent, r.message, l.listname
+            FROM reminders r
+            JOIN lists l ON r.list_id = l.id
+            WHERE r.username = $1
+            ORDER BY r.remind_at ASC
+        `, [username]);
+
+        // Map for EJS
+        const reminders = result.rows.map(r => {
+            const dt = new Date(r.remind_at);
+            return {
+                id: r.id,
+                message: r.message && r.message.trim() !== ""
+                    ? r.message
+                    : `Reminder for list: ${r.listname}`, // default message if empty
+                status: r.sent ? "sent" : "pending",
+                reminder_date: dt,
+                reminder_time: dt.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            };
+        });
+
+        res.render('reminders', { reminders });
+
+    } catch (err) {
+        console.error(err);
+        res.send("Error loading reminders: " + err.message);
+    }
+});
+
+app.get('/test-email', async (req, res) => {
+  try {
+    const info = await transporter.sendMail({
+      from: process.env.EXPENDIT_EMAIL,
+      to: 'gsofori@st.ug.edu.gh',
+      subject: 'Test Email',
+      text: 'This is a test email'
+    });
+    res.send('Email sent: ' + info.response);
+  } catch (err) {
+    console.error(err);
+    res.send('Error sending email: ' + err.message);
+  }
+});
+
+app.get('/reminders/new', async (req, res) => {
+    const username = req.session.username;
+    if (!username) return res.redirect('/');
+
+    try {
+        // Get all user's lists
+        const listsRes = await pool.query(
+            "SELECT id, listname FROM lists WHERE username=$1",
+            [username]
+        );
+
+        res.render('newReminder', { lists: listsRes.rows });
+    } catch (err) {
+        console.error(err);
+        res.send("Error loading lists: " + err.message);
+    }
+});
+app.post('/reminders/new', async (req, res) => {
+    const username = req.session.username;
+    const { list_id, date, time, message } = req.body;
+
+    if (!username) return res.redirect('/');
+
+    // ❌ Prevent past date/time
+    if (isPastDateTime(date, time)) {
+        return res.send("❗ Invalid reminder: You cannot set a reminder in the past.");
+    }
+
+    try {
+        const listRes = await pool.query(
+            "SELECT listname FROM lists WHERE id=$1 AND username=$2",
+            [list_id, username]
+        );
+
+        if (listRes.rowCount === 0) {
+            return res.send("List not found");
+        }
+
+        const listname = listRes.rows[0].listname;
+        const finalMessage = message && message.trim() !== ""
+            ? message.trim()
+            : `Reminder for list: ${listname}`;
+
+        const remind_at = `${date} ${time}`;
+
+        await pool.query(
+            "INSERT INTO reminders (list_id, username, remind_at, message) VALUES ($1, $2, $3, $4)",
+            [list_id, username, remind_at, finalMessage]
+        );
+
+        res.redirect('/reminders');
+    } catch (err) {
+        console.error(err);
+        res.send("Error creating reminder: " + err.message);
+    }
+});
+
+
+app.post('/reminders/delete', async (req, res) => {
+    const username = req.session.username;
+    const { id } = req.body;
+
+    if (!username) return res.redirect('/');
+
+    try {
+        await pool.query(
+            "DELETE FROM reminders WHERE id = $1 AND username = $2",
+            [id, username]
+        );
+
+        res.redirect('/reminders');
+    } catch (err) {
+        console.error(err);
+        res.send("Error deleting reminder: " + err.message);
+    }
+});
+
+
+app.get('/reminders/edit/:id', async (req, res) => {
+    const { id } = req.params;
+    const username = req.session.username;
+    if (!username) return res.redirect('/');
+
+    try {
+        const reminderResult = await pool.query(
+            'SELECT * FROM reminders WHERE id = $1 AND username = $2',
+            [id, username]
+        );
+
+        if (!reminderResult.rows.length) return res.send('Reminder not found or access denied.');
+
+        const reminder = reminderResult.rows[0];
+        res.render('editReminder', { reminder });
+    } catch (err) {
+        console.error('Database error:', err);
+        res.send('Error fetching reminder.');
+    }
+});
+
+
+
+app.post('/reminders/edit/:id', async (req, res) => {
+    const { id } = req.params;
+    const { message, date, time } = req.body;
+    const username = req.session.username;
+
+    if (!username) return res.redirect('/');
+
+    // ❌ Prevent past date/time
+    if (isPastDateTime(date, time)) {
+        return res.send("❗ Invalid reminder: You cannot update a reminder to a past date/time.");
+    }
+
+    try {
+        const remind_at = `${date} ${time}`;
+
+        await pool.query(
+            "UPDATE reminders SET message = $1, remind_at = $2, sent = false WHERE id = $3 AND username = $4",
+            [message, remind_at, id, username]
+        );
+
+        res.redirect('/reminders');
+    } catch (err) {
+        console.error(err);
+        res.send('Error updating reminder.');
+    }
+});
+
+
+
+app.post("/reminders/markdone/:id", async (req, res) => {
+    try {
+        await pool.query(
+            "UPDATE reminders SET status = 'sent' WHERE id = $1",
+            [req.params.id]
+        );
+        res.redirect("/reminders");
+    } catch (err) {
+        console.log(err);
+        res.send("Error marking reminder as done.");
+    }
+});
+app.post("/reminders/delete/:id", async (req, res) => {
+    try {
+        await pool.query("DELETE FROM reminders WHERE id = $1", [req.params.id]);
+        res.redirect("/reminders");
+    } catch (err) {
+        console.log(err);
+        res.send("Error deleting reminder.");
+    }
+});
+
 
 // --- Excel Export ---
 // Show Excel conversion page
@@ -838,35 +1292,66 @@ app.post("/cvtExcel/download", async (req, res) => {
     const username = req.session.username;
     if (!username) return res.redirect('/');
 
-    const { listname } = req.body;
+    let { listname } = req.body;
 
     try {
-        const listsResult = await pool.query(
-            'SELECT * FROM lists WHERE username=$1 AND listname ILIKE $2',
-            [username, listname]
-        );
+        let listsResult;
+
+        if (!listname || listname.trim() === "") {
+            // Export all lists for the user
+            listsResult = await pool.query(
+                'SELECT * FROM lists WHERE username=$1 ORDER BY created_at',
+                [username]
+            );
+        } else {
+            // Export only the selected list
+            listsResult = await pool.query(
+                'SELECT * FROM lists WHERE username=$1 AND TRIM(listname) ILIKE TRIM($2)',
+                [username, listname]
+            );
+        }
+
+        if (listsResult.rows.length === 0) {
+            return res.send("No list found with that name.");
+        }
 
         const workbook = new ExcelJS.Workbook();
         const sheet = workbook.addWorksheet("Exported Lists");
 
         sheet.columns = [
-            { header: "List Name", key: "listname", width: 20 },
+            { header: "List Name", key: "listname", width: 25 },
             { header: "Created At", key: "created_at", width: 25 },
-            { header: "Item Name", key: "itemname", width: 20 },
-            { header: "Quantity", key: "quantity", width: 10 },
-            { header: "Price", key: "price", width: 10 },
-            { header: "Total", key: "total", width: 10 }
+            { header: "Item Name", key: "itemname", width: 25 },
+            { header: "Quantity", key: "quantity", width: 15 },
+            { header: "Price", key: "price", width: 15 },
+            { header: "Total", key: "total", width: 15 }
         ];
 
         for (const list of listsResult.rows) {
             const items = await pool.query('SELECT * FROM items WHERE list_id=$1', [list.id]);
-            items.rows.forEach(item => {
+
+            if (items.rows.length === 0) {
+                // Add empty row if no items
                 sheet.addRow({
                     listname: list.listname,
                     created_at: list.created_at.toLocaleString(),
-                    ...item
+                    itemname: "-",
+                    quantity: 0,
+                    price: 0,
+                    total: 0
                 });
-            });
+            } else {
+                items.rows.forEach(item => {
+                    sheet.addRow({
+                        listname: list.listname,
+                        created_at: list.created_at.toLocaleString(),
+                        itemname: item.itemname,
+                        quantity: item.quantity || 0,
+                        price: item.price || 0,
+                        total: (Number(item.quantity) || 0) * (Number(item.price) || 0)
+                    });
+                });
+            }
         }
 
         const buffer = await workbook.xlsx.writeBuffer();
@@ -879,6 +1364,8 @@ app.post("/cvtExcel/download", async (req, res) => {
         res.send("Error generating Excel: " + err.message);
     }
 });
+
+
 
 
 // --- Email Excel ---
@@ -925,10 +1412,14 @@ app.post("/sendExcelEmail", async (req, res) => {
             const items = await pool.query('SELECT * FROM items WHERE list_id=$1', [list.id]);
             items.rows.forEach(item => {
                 sheet.addRow({
-                    listname: list.listname,
-                    created_at: list.created_at.toLocaleString(),
-                    ...item
-                });
+    listname: list.listname,
+    created_at: list.created_at.toLocaleString(),
+    itemname: item.itemname,
+    quantity: item.quantity,
+    price: item.price,
+    total: Number(item.quantity) * Number(item.price)
+});
+
             });
         }
 

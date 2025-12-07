@@ -5,22 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Expendit</title>
     <style>
-        table { border-collapse: collapse; width: 100%; margin-top: 0px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-        button { padding: 5px 10px; margin: 2px; }
-    </style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    h2 { margin-bottom: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+    th { background-color: #f4f4f4; font-weight: bold; }
+    input { width: 25%; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
+    .btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; margin: 2px; }
+    .home-btn { background-color: #4CAF50; color: white; }
+    .remove-btn { background-color: #e60000; color: white;}
+    .view-btn { background-color: #007bff; color: white;}
+    .view-btn:hover { background-color: #00c6ff; }
+    .home-btn:hover { background-color: #45a049; }
+    .remove-btn:hover { background-color: #cc0000; }
+    #addItemForm { display: none; margin-top: 20px; }
+</style>
 </head>
 <body>
     <h1>History</h1>
 
     <!-- Clear History -->
     <form action="/history/clear" method="POST" onsubmit="return confirm('Are you sure you want to clear all history?');">
-        <button type="submit">Clear History</button>
+        <button type="submit" class="btn remove-btn">Clear History</button>
     </form>
 
     <!-- Back Home -->
     <form action="/home" method="GET" style="display:inline;">
-        <button type="submit">Home</button>
+        <button type="submit" class="btn home-btn">Home</button>
     </form>
 
     <% if (!lists || lists.length === 0) { %>
@@ -41,14 +52,14 @@
                         <!-- View List -->
                         <form action="/history/data" method="POST" style="display:inline;">
                             <input type="hidden" name="listing" value="<%= list.listname %>">
-                            <button type="submit">View</button>
+                            <button type="submit" class="btn view-btn">View</button>
                         </form>
 
                         <!-- Delete List -->
                         <form action="/history/deletelist" method="POST" style="display:inline;"
                               onsubmit="return confirm('Delete this entire list?');">
                             <input type="hidden" name="listname" value="<%= list.listname %>">
-                            <button type="submit" class="delete">Delete</button>
+                            <button type="submit" class="btn remove-btn">Delete</button>
                         </form>
                     </td>
                 </tr>
