@@ -539,3 +539,19 @@ app.post("/sendExcelEmail", async (req, res) => {
         res.status(500).send("Error sending email: " + err.message);
     }
 });
+
+// Email Testing
+app.get('/test-email', async (req, res) => {
+  try {
+    const info = await transporter.sendMail({
+      from: process.env.EXPENDIT_EMAIL,
+      to: 'gsofori@st.ug.edu.gh',
+      subject: 'Test Email',
+      text: 'This is a test email'
+    });
+    res.send('Email sent: ' + info.response);
+  } catch (err) {
+    console.error(err);
+    res.send('Error sending email: ' + err.message);
+  }
+});

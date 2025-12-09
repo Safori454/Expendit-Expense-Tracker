@@ -29,9 +29,9 @@ const pool = new Pool({
   database: process.env.PG_DATABASE,
   password: process.env.PG_PASSWORD,
   port: process.env.PG_PORT,
-  ssl: {
-    rejectUnauthorized: false 
-  }
+//   ssl: {
+//     rejectUnauthorized: false 
+//   }
 });
 
 // Test DB connection
@@ -55,12 +55,12 @@ app.use(session({
     saveUninitialized: true
 }));
 
-
 // Make username available in all views
 app.use((req, res, next) => {
     res.locals.username = req.session.username || null;
     next();
 });
+
 export const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -75,7 +75,6 @@ transporter.verify((err, success) => {
 });
 
 
-// Generates a PDF in /tmp and returns the file path
 async function generateListPDF(listName, items, message) {
   return new Promise((resolve, reject) => {
     try {
@@ -91,61 +90,111 @@ async function generateListPDF(listName, items, message) {
       const stream = fs.createWriteStream(filePath);
       doc.pipe(stream);
 
-      // Title
+
+      // Header Section
       doc.fontSize(20).text(listName, { align: "center" });
       doc.moveDown();
       doc.fontSize(12).text(`Message: ${message}`, { align: "left" });
       doc.moveDown(1);
 
-      // Table headers
-      const tableTop = doc.y;
+
+      // Column positions
       const itemX = 50;
       const qtyX = 250;
-      const priceX = 300;
+      const priceX = 320;
       const totalX = 400;
 
-      doc.font("Helvetica-Bold").text("Item", itemX, tableTop);
-      doc.text("Qty", qtyX, tableTop);
-      doc.text("Price", priceX, tableTop);
-      doc.text("Total", totalX, tableTop);
-      doc.moveDown(0.5);
-      doc.moveTo(itemX, doc.y).lineTo(500, doc.y).stroke();
 
-      // Table content
+      // Table Header
+      function drawTableHeader() {
+        doc.fontSize(12).font("Helvetica-Bold");
+
+        doc.text("Item", itemX, doc.y);
+        doc.text("Quantity", qtyX, doc.y);
+        doc.text("Price", priceX, doc.y);
+        doc.text("Total", totalX, doc.y);
+
+        doc.moveDown(0.5);
+        doc.moveTo(itemX, doc.y).lineTo(500, doc.y).stroke();
+      }
+
+      drawTableHeader();
+
+
+      // Items Loop + Pagination
       let grandTotal = 0;
-      items.forEach((item) => {
-        const y = doc.y + 5;
 
+      items.forEach(item => {
+        // New page if needed
+        if (doc.y > doc.page.height - 80) {
+          doc.addPage();
+          drawTableHeader();
+          doc.moveDown();
+        }
+
+        const y = doc.y + 5;
         const name = item.itemname || "-";
         const quantity = Number(item.quantity) || 0;
         const price = Number(item.price) || 0;
         const total = quantity * price;
+
         grandTotal += total;
 
-        doc.font("Helvetica").text(name, itemX, y);
-        doc.text(quantity, qtyX, y);
-        doc.text(price.toFixed(2), priceX, y);
-        doc.text(total.toFixed(2), totalX, y);
+        doc.font("Helvetica");
+
+        // Column 1: Item (with ellipsis)
+        doc.text(name, itemX, y, {
+          width: qtyX - itemX - 10,
+          ellipsis: true
+        });
+
+        // Column 2: Qty
+        doc.text(String(quantity), qtyX, y, {
+          width: priceX - qtyX - 10,
+          align: "left"
+        });
+
+        // Column 3: Price
+        doc.text(price.toFixed(2), priceX, y, {
+          width: totalX - priceX - 10,
+          align: "left"
+        });
+
+        // Column 4: Total
+        doc.text(total.toFixed(2), totalX, y, {
+          width: 80,
+          align: "left"
+        });
+
         doc.moveDown(1);
       });
 
-      // Grand total
+
+      // Grand Total
+      if (doc.y > doc.page.height - 100) {
+        doc.addPage();
+      }
+
       doc.moveDown(1);
-      doc.font("Helvetica-Bold").text(
+      doc.font("Helvetica-Bold").fontSize(13).text(
         `Grand Total: ${grandTotal.toFixed(2)}`,
         totalX,
         doc.y,
         { align: "right" }
       );
 
+     
       // Footer
       doc.moveDown(2);
-      doc.fontSize(10).text("Powered by Expendit", { align: "center", opacity: 0.5 });
+      doc.fontSize(10).text("Powered by Expendit", {
+        align: "center",
+        opacity: 0.5
+      });
 
       doc.end();
 
       stream.on("finish", () => resolve(filePath));
-      stream.on("error", (err) => reject(err));
+      stream.on("error", err => reject(err));
     } catch (err) {
       reject(err);
     }
@@ -153,20 +202,17 @@ async function generateListPDF(listName, items, message) {
 }
 
 // --- Routes ---
-
-// Home
+// Sign In or Sign Up
 app.get('/', (req, res) => {
     res.render('index.ejs', { error: null });
 });
 
-
-// Signup
-// GET signup page
+// Sign Up
 app.get('/login/signup', (req, res) => {
     res.render('signup.ejs', { error: null, success: null });
 });
 
-
+// Register User
 app.post('/login/register', async (req, res) => {
     const { username, password, confirm_password } = req.body;
 
@@ -246,17 +292,15 @@ app.post('/login/home', async (req, res) => {
     }
 });
 
-
+// Home
 app.get('/home', (req, res) => {
     if (!req.session.username) {
         return res.redirect('/');
     }
-
     res.render('home.ejs', {
         username: req.session.username
     });
 });
-
 
 // Logout
 app.get('/logout', (req, res) => {
@@ -266,34 +310,13 @@ app.get('/logout', (req, res) => {
 });
 
 // --- Lists ---
-// Create list
-// Show create list page
+// Create list and Show create list page
 app.post('/newlist', (req, res) => {
     if (!req.session.username) return res.redirect('/');
     res.render('createlist.ejs', { listname: null, editMode: false });
 });
 
-// Create new list
-app.post('/newsheet', async (req, res) => {
-    const { listname } = req.body;
-    const username = req.session.username;
-    if (!username) return res.redirect('/');
-
-    try {
-        // Insert list for this user, ensure listname unique per user
-        await pool.query(
-            `INSERT INTO lists (listname, username) VALUES ($1, $2)`,
-            [listname, username]
-        );
-        res.render('createlist.ejs', { listname, editMode: false });
-    } catch (err) {
-        if (err.code === '23505') { // unique violation
-            return res.send("You already have a list with this name!");
-        }
-        console.error(err);
-        res.send("Error creating list: " + err.message);
-    }
-});
+// Modify List name
 app.post('/editsheet',  async (req, res) => {
     const { listname } = req.body;
     const username = req.session.username;
@@ -308,6 +331,7 @@ app.post('/editsheet',  async (req, res) => {
     
 });
 
+// Save Modified list name
 app.post('/updatesheet', async (req, res) => {
     const { oldname, listname } = req.body;
     const username = req.session.username;
@@ -328,8 +352,31 @@ app.post('/updatesheet', async (req, res) => {
         res.send("Error creating list: " + err.message);
     }
 });
-// View list
-// GET route to view a list
+
+// Create new list
+app.post('/newsheet', async (req, res) => {
+    const { listname } = req.body;
+    const username = req.session.username;
+    if (!username) return res.redirect('/');
+
+    try {
+        // Insert list for this user and ensuring listname is unique per user
+        await pool.query(
+            `INSERT INTO lists (listname, username) VALUES ($1, $2)`,
+            [listname, username]
+        );
+        res.render('createlist.ejs', { listname, editMode: false });
+    } catch (err) {
+        if (err.code === '23505') { // unique violation
+            return res.send("You already have a list with this name!");
+        }
+        console.error(err);
+        res.send("Error creating list: " + err.message);
+    }
+});
+
+
+// Created list page where users will add items
 app.get('/list', async (req, res) => {
     const { listname } = req.query;
     const username = req.session.username;
@@ -368,7 +415,7 @@ app.get('/list', async (req, res) => {
     }
 });
 
-
+// Created list page where users will add items to list
 app.post('/list', async (req, res) => {
     const { listname } = req.body;
     try {
@@ -626,11 +673,7 @@ app.get('/viewsaved', async (req, res) => {
     }
 });
 
-
-
-// ==============================
 // HISTORY ROUTES
-// ==============================
 
 //View all history
 app.get('/history', async (req, res) => {
@@ -696,6 +739,7 @@ app.get('/history/data', async (req, res) => {
     }
 });
 
+// View single history list 
 app.post('/history/data', async (req, res) => {
     const username = req.session.username;
     const { listing } = req.body; // match the input name from the form
@@ -732,7 +776,6 @@ app.post('/history/data', async (req, res) => {
         res.send("Error loading history content: " + err.message);
     }
 });
-
 
 // Add item to history list
 app.post('/history/additem', async (req, res) => {
@@ -809,6 +852,7 @@ await pool.query(
     }
 });
 
+// Clear all history and lists
 app.post('/history/clear', async (req, res) => {
     const username = req.session.username;
     const { id, listname } = req.body;
@@ -825,7 +869,6 @@ await pool.query('DELETE FROM lists WHERE username=$1', [username]);
         res.send("Error deleting item: " + err.message);
     }
 });
-
 
 // Edit/update item in history
 app.post('/history/edititem/update', async (req, res) => {
@@ -921,6 +964,7 @@ app.post("/history/deleteitem", async (req, res) => {
     }
 });
 
+// Delete all items in a list
 app.post('/history/removeallitems', async (req, res) => {
     const { listname } = req.body;
     const username = req.session.username;
@@ -949,70 +993,21 @@ app.post('/history/removeallitems', async (req, res) => {
         res.send('Error deleting items: ' + err.message);
     }
 });
+
+// Ensuring past datetimes are not set as reminders
 function isPastDateTime(date, time) {
     const chosen = new Date(`${date} ${time}`);
     const now = new Date();
     return chosen <= now;
 }
 
-// Set reminder routes
-app.post('/setreminder', async (req, res) => {
-    const { listname } = req.body;
-    res.redirect(`/list/set-reminder?listname=${encodeURIComponent(listname)}`);
-});
-app.get('/list/set-reminder', async (req, res) => {
-    const username = req.session.username;
-    const { listname } = req.query;
-
-    if (!username) return res.redirect('/');
-
-    res.render('setReminder', { listname });
-});
-app.post('/list/set-reminder', async (req, res) => {
-    const username = req.session.username;
-    const { listname, date, time, message, email } = req.body;
-    console.log(listname, message, date, time, email);
-
-    if (!username) return res.redirect('/');
-    if (!email) return res.send("❗ Please provide an email address for the reminder.");
-
-    // ❌ Prevent past date/time
-    if (isPastDateTime(date, time)) {
-        return res.send("❗ Invalid reminder: You cannot set a reminder in the past.");
-    }
-
-    try {
-        const listRes = await pool.query(
-            "SELECT id FROM lists WHERE username=$1 AND listname=$2",
-            [username, listname]
-        );
-
-        if (listRes.rowCount === 0) return res.send("List not found");
-
-        const list_id = listRes.rows[0].id;
-        const finalMessage = message?.trim() || `Reminder for list: ${listname}`;
-        const remind_at = `${date} ${time}`;
-
-        await pool.query(
-            "INSERT INTO reminders (list_id, username, remind_at, message, email) VALUES ($1, $2, $3, $4, $5)",
-            [list_id, username, remind_at, finalMessage, email]
-        );
-
-        res.redirect('/reminders');
-    } catch (err) {
-        console.error(err);
-        res.send("Error setting reminder: " + err.message);
-    }
-});
-
-
-
+// Set Scheduler to call reminders
 cron.schedule('* * * * *', async () => {
     console.log('Checking reminders...');
     await axios.get('http://localhost:3000/cron/check-reminders');
 });
 
-
+// Getting Reminders
 app.get("/cron/check-reminders", async (req, res) => {
   console.log("CRON route hit");
 
@@ -1068,7 +1063,7 @@ app.get("/cron/check-reminders", async (req, res) => {
   }
 });
 
-
+// Reminders page showing all reminders
 app.get('/reminders', async (req, res) => {
     const username = req.session.username;
     if (!username) return res.redirect('/');
@@ -1105,21 +1100,7 @@ app.get('/reminders', async (req, res) => {
     }
 });
 
-app.get('/test-email', async (req, res) => {
-  try {
-    const info = await transporter.sendMail({
-      from: process.env.EXPENDIT_EMAIL,
-      to: 'gsofori@st.ug.edu.gh',
-      subject: 'Test Email',
-      text: 'This is a test email'
-    });
-    res.send('Email sent: ' + info.response);
-  } catch (err) {
-    console.error(err);
-    res.send('Error sending email: ' + err.message);
-  }
-});
-
+// Setting Reminder
 app.get('/reminders/new', async (req, res) => {
     const username = req.session.username;
     if (!username) return res.redirect('/');
@@ -1137,13 +1118,64 @@ app.get('/reminders/new', async (req, res) => {
         res.send("Error loading lists: " + err.message);
     }
 });
-app.post('/reminders/new', async (req, res) => {
+
+// Set reminder routes
+app.post('/setreminder', async (req, res) => {
+    const { listname } = req.body;
+    res.redirect(`/list/set-reminder?listname=${encodeURIComponent(listname)}`);
+});
+app.get('/list/set-reminder', async (req, res) => {
     const username = req.session.username;
-    const { list_id, date, time, message } = req.body;
+    const { listname } = req.query;
 
     if (!username) return res.redirect('/');
 
-    // ❌ Prevent past date/time
+    res.render('setReminder', { listname });
+});
+app.post('/list/set-reminder', async (req, res) => {
+    const username = req.session.username;
+    const { listname, date, time, message, email } = req.body;
+    console.log(listname, message, date, time, email);
+
+    if (!username) return res.redirect('/');
+    if (!email) return res.send("❗ Please provide an email address for the reminder.");
+
+    // Prevent past date/time
+    if (isPastDateTime(date, time)) {
+        return res.send("❗ Invalid reminder: You cannot set a reminder in the past.");
+    }
+
+    try {
+        const listRes = await pool.query(
+            "SELECT id FROM lists WHERE username=$1 AND listname=$2",
+            [username, listname]
+        );
+
+        if (listRes.rowCount === 0) return res.send("List not found");
+
+        const list_id = listRes.rows[0].id;
+        const finalMessage = message?.trim() || `Reminder for list: ${listname}`;
+        const remind_at = `${date} ${time}`;
+
+        await pool.query(
+            "INSERT INTO reminders (list_id, username, remind_at, message, email) VALUES ($1, $2, $3, $4, $5)",
+            [list_id, username, remind_at, finalMessage, email]
+        );
+
+        res.redirect('/reminders');
+    } catch (err) {
+        console.error(err);
+        res.send("Error setting reminder: " + err.message);
+    }
+});
+
+// Creating New Reminders
+app.post('/reminders/new', async (req, res) => {
+    const username = req.session.username;
+    const { list_id, date, time, message, email } = req.body;  
+
+    if (!username) return res.redirect('/');
+
     if (isPastDateTime(date, time)) {
         return res.send("❗ Invalid reminder: You cannot set a reminder in the past.");
     }
@@ -1166,8 +1198,9 @@ app.post('/reminders/new', async (req, res) => {
         const remind_at = `${date} ${time}`;
 
         await pool.query(
-            "INSERT INTO reminders (list_id, username, remind_at, message) VALUES ($1, $2, $3, $4)",
-            [list_id, username, remind_at, finalMessage]
+            `INSERT INTO reminders (list_id, username, remind_at, message, email)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [list_id, username, remind_at, finalMessage, email]   
         );
 
         res.redirect('/reminders');
@@ -1177,7 +1210,7 @@ app.post('/reminders/new', async (req, res) => {
     }
 });
 
-
+// Deleting reminders
 app.post('/reminders/delete', async (req, res) => {
     const username = req.session.username;
     const { id } = req.body;
@@ -1197,7 +1230,7 @@ app.post('/reminders/delete', async (req, res) => {
     }
 });
 
-
+// Editing Reminders
 app.get('/reminders/edit/:id', async (req, res) => {
     const { id } = req.params;
     const username = req.session.username;
@@ -1219,8 +1252,7 @@ app.get('/reminders/edit/:id', async (req, res) => {
     }
 });
 
-
-
+// Edit reminders
 app.post('/reminders/edit/:id', async (req, res) => {
     const { id } = req.params;
     const { message, date, time } = req.body;
@@ -1248,8 +1280,7 @@ app.post('/reminders/edit/:id', async (req, res) => {
     }
 });
 
-
-
+// Mark as done when reminders get sent
 app.post("/reminders/markdone/:id", async (req, res) => {
     try {
         await pool.query(
@@ -1273,7 +1304,7 @@ app.post("/reminders/delete/:id", async (req, res) => {
 });
 
 
-// --- Excel Export ---
+// Excel Export 
 // Show Excel conversion page
 app.post("/cvtExcel", async (req, res) => {
     const username = req.session.username;
@@ -1288,6 +1319,7 @@ app.post("/cvtExcel", async (req, res) => {
     }
 });
 
+// Download list as excel file
 app.post("/cvtExcel/download", async (req, res) => {
     const username = req.session.username;
     if (!username) return res.redirect('/');
@@ -1365,12 +1397,8 @@ app.post("/cvtExcel/download", async (req, res) => {
     }
 });
 
-
-
-
-// --- Email Excel ---
+// Email Excel
 // Show Send Email page
-// Render sendEmail.ejs
 app.get('/cvtExcel/email', async (req, res) => {
     const username = req.session.username;
     if (!username) return res.redirect('/');
@@ -1386,7 +1414,6 @@ app.get('/cvtExcel/email', async (req, res) => {
         res.send("Error loading lists for email: " + err.message);
     }
 });
-
 
 app.post("/sendExcelEmail", async (req, res) => {
     const username = req.session.username;
@@ -1444,10 +1471,6 @@ app.post("/sendExcelEmail", async (req, res) => {
         res.status(500).send("Error sending email: " + err.message);
     }
 });
-
-
-
-
 
 // Start server
 app.listen(port, () => console.log(`Server running at http://localhost:${port}`));
