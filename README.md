@@ -57,3 +57,8 @@ Built with Node.js, Express, PostgreSQL, and EJS, it provides a simple, intuitiv
   
 ## WebPage Link
 https://expendit-expense-tracker.onrender.com
+
+Author
+
+Godfred Safo Ofori
+Email: gsofori@st.ug.edu.gh
