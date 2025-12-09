@@ -61,13 +61,21 @@ app.use((req, res, next) => {
     next();
 });
 
-export const transporter = nodemailer.createTransport({
-  service: 'gmail',
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,      
+  port: process.env.SMTP_PORT,      
+  secure: false,                     
   auth: {
-    user: process.env.EXPENDIT_EMAIL,
-    pass: process.env.EXPENDIT_PASSWORD
-  }
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+  tls: {
+    rejectUnauthorized: false       
+  },
+  connectionTimeout: 10000 
 });
+
 
 transporter.verify((err, success) => {
   if (err) console.error('Email transporter error:', err);
