@@ -60,5 +60,5 @@ https://expendit-expense-tracker.vercel.app
 
 Author
 
-Godfred Safo Ofori
+Godfred Safo Ofori,
 Email: gsofori@st.ug.edu.gh
