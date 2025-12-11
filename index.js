@@ -21,6 +21,8 @@ const __dirname = path.dirname(__filename);
 const { Pool } = pkg;
 const app = express();
 const port = 3000;
+const FROM_EMAIL = `"${process.env.SMTP_FROM_NAME}" <${process.env.SMTP_FROM_EMAIL}>`;
+
 
 // PostgreSQL connection
 const pool = new Pool({
@@ -63,18 +65,15 @@ app.use((req, res, next) => {
 
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,      
-  port: process.env.SMTP_PORT,      
-  secure: false,                     
+  host: process.env.SMTP_HOST,
+  port: process.env.SMTP_PORT,
+  secure: false,
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false       
-  },
-  connectionTimeout: 10000 
+    user: process.env.SMTP_USER, 
+    pass: process.env.SMTP_PASS  
+  }
 });
+
 
 
 transporter.verify((err, success) => {
@@ -86,61 +85,62 @@ transporter.verify((err, success) => {
 async function generateListPDF(listName, items, message) {
   return new Promise((resolve, reject) => {
     try {
-      const tmpDir = path.join(__dirname, "../tmp");
-      if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
-
-      const filePath = path.join(
-        tmpDir,
-        `${listName.replace(/\s+/g, "_")}_${Date.now()}.pdf`
-      );
-
+      let buffers = [];
       const doc = new PDFDocument({ margin: 50, size: "A4" });
-      const stream = fs.createWriteStream(filePath);
-      doc.pipe(stream);
 
+      doc.on("data", buffers.push.bind(buffers));
+      doc.on("end", () => resolve(Buffer.concat(buffers)));
 
-      // Header Section
+      // ==== LOGO ====
+      const logoPath = path.join(__dirname, "/public/images/expendit.png");
+
+      doc.image(logoPath, {
+        fit: [120, 120],
+        align: "center",
+      });
+      doc.moveDown(1.5);
+
+      // ===== HEADER =====
       doc.fontSize(20).text(listName, { align: "center" });
       doc.moveDown();
-      doc.fontSize(12).text(`Message: ${message}`, { align: "left" });
+      doc.fontSize(12).text(`Message: ${message}`);
       doc.moveDown(1);
 
-
-      // Column positions
+      // Column layout
       const itemX = 50;
-      const qtyX = 250;
-      const priceX = 320;
-      const totalX = 400;
+      const qtyX = 260;
+      const priceX = 340;
+      const totalX = 420;
+      const rowHeight = 20;
 
-
-      // Table Header
       function drawTableHeader() {
-        doc.fontSize(12).font("Helvetica-Bold");
+        const startY = doc.y;
 
-        doc.text("Item", itemX, doc.y);
-        doc.text("Quantity", qtyX, doc.y);
-        doc.text("Price", priceX, doc.y);
-        doc.text("Total", totalX, doc.y);
+        doc.font("Helvetica-Bold").fontSize(12);
 
-        doc.moveDown(0.5);
-        doc.moveTo(itemX, doc.y).lineTo(500, doc.y).stroke();
+        doc.text("Item", itemX, startY);
+        doc.text("Quantity", qtyX, startY);
+        doc.text("Price", priceX, startY);
+        doc.text("Total", totalX, startY);
+
+        doc.moveTo(itemX, startY + 15)
+           .lineTo(500, startY + 15)
+           .stroke();
+
+        doc.moveDown();
       }
 
       drawTableHeader();
 
-
-      // Items Loop + Pagination
       let grandTotal = 0;
 
-      items.forEach(item => {
-        // New page if needed
-        if (doc.y > doc.page.height - 80) {
+      for (const item of items) {
+        if (doc.y + rowHeight > doc.page.height - 60) {
           doc.addPage();
           drawTableHeader();
-          doc.moveDown();
         }
 
-        const y = doc.y + 5;
+        const y = doc.y;
         const name = item.itemname || "-";
         const quantity = Number(item.quantity) || 0;
         const price = Number(item.price) || 0;
@@ -148,66 +148,37 @@ async function generateListPDF(listName, items, message) {
 
         grandTotal += total;
 
-        doc.font("Helvetica");
+        doc.font("Helvetica").fontSize(11);
 
-        // Column 1: Item (with ellipsis)
         doc.text(name, itemX, y, {
           width: qtyX - itemX - 10,
           ellipsis: true
         });
+        doc.text(String(quantity), qtyX, y);
+        doc.text(price.toFixed(2), priceX, y);
+        doc.text(total.toFixed(2), totalX, y);
 
-        // Column 2: Qty
-        doc.text(String(quantity), qtyX, y, {
-          width: priceX - qtyX - 10,
-          align: "left"
-        });
-
-        // Column 3: Price
-        doc.text(price.toFixed(2), priceX, y, {
-          width: totalX - priceX - 10,
-          align: "left"
-        });
-
-        // Column 4: Total
-        doc.text(total.toFixed(2), totalX, y, {
-          width: 80,
-          align: "left"
-        });
-
-        doc.moveDown(1);
-      });
-
-
-      // Grand Total
-      if (doc.y > doc.page.height - 100) {
-        doc.addPage();
+        doc.moveDown();
       }
 
-      doc.moveDown(1);
-      doc.font("Helvetica-Bold").fontSize(13).text(
-        `Grand Total: ${grandTotal.toFixed(2)}`,
-        totalX,
-        doc.y,
-        { align: "right" }
-      );
+      if (doc.y + 40 > doc.page.height) doc.addPage();
 
-     
-      // Footer
+      doc.moveDown(1);
+      doc.font("Helvetica-Bold").fontSize(13)
+        .text(`Grand Total: ${grandTotal.toFixed(2)}`, totalX, doc.y);
+
       doc.moveDown(2);
-      doc.fontSize(10).text("Powered by Expendit", {
-        align: "center",
-        opacity: 0.5
-      });
+      doc.fontSize(10).fillColor("#999")
+        .text("Powered by Expendit", { align: "center" });
 
       doc.end();
 
-      stream.on("finish", () => resolve(filePath));
-      stream.on("error", err => reject(err));
     } catch (err) {
       reject(err);
     }
   });
 }
+
 
 // --- Routes ---
 // Sign In or Sign Up
@@ -1031,34 +1002,37 @@ app.get("/cron/check-reminders", async (req, res) => {
     const reminders = remindersRes.rows;
 
     for (const row of reminders) {
-      // Fetch items for this list
+
       const itemsRes = await pool.query(
         "SELECT itemname, quantity, price FROM items WHERE list_id = $1",
         [row.list_id]
       );
       const items = itemsRes.rows;
 
-      // Generate PDF
-      const pdfPath = await generateListPDF(row.listname, items, row.message);
+      // Generate PDF -> returns BUFFER not file
+      const pdfBuffer = await generateListPDF(row.listname, items, row.message);
 
-      // Send email with PDF attachment
       try {
         await transporter.sendMail({
-          from: process.env.SMTP_EMAIL,
+          from: FROM_EMAIL,
           to: row.email,
           subject: `Reminder: ${row.listname}`,
           text: row.message,
-          attachments: [{ filename: `${row.listname}.pdf`, path: pdfPath }],
+          attachments: [
+            {
+              filename: `${row.listname}.pdf`,
+              content: pdfBuffer,
+              contentType: "application/pdf"
+            }
+          ]
         });
+
         console.log("Email sent to", row.email);
 
-        // Mark reminder as sent
-        await pool.query("UPDATE reminders SET sent = true WHERE id = $1", [row.id]);
-
-        // Delete PDF after sending
-        fs.unlink(pdfPath, (err) => {
-          if (err) console.error("Failed to delete PDF:", err);
-        });
+        await pool.query(
+          "UPDATE reminders SET sent = true WHERE id = $1",
+          [row.id]
+        );
       } catch (err) {
         console.error("Failed to send email to", row.email, err);
       }
