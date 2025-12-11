@@ -4,6 +4,7 @@ import session from 'express-session';
 import ejs from 'ejs';
 import ExcelJS from 'exceljs';
 import nodemailer from 'nodemailer';
+import Brevo from "sib-api-v3-sdk";
 import pkg from 'pg';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
@@ -12,6 +13,7 @@ import fs from 'fs';
 import path from 'path';
 import cron from 'node-cron';
 import axios from 'axios';
+import FormData from "form-data";
 import { fileURLToPath } from 'url';
 
 
@@ -21,7 +23,6 @@ const __dirname = path.dirname(__filename);
 const { Pool } = pkg;
 const app = express();
 const port = 3000;
-const FROM_EMAIL = `"${process.env.SMTP_FROM_NAME}" <${process.env.SMTP_FROM_EMAIL}>`;
 
 
 // PostgreSQL connection
@@ -63,25 +64,12 @@ app.use((req, res, next) => {
     next();
 });
 
+// Brevo (Sendinblue) API setup
+const brevoClient = Brevo.ApiClient.instance;
+brevoClient.authentications['api-key'].apiKey = process.env.BREVO_API_KEY;
+const emailApi = new Brevo.TransactionalEmailsApi();
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER, 
-    pass: process.env.SMTP_PASS  
-  }
-});
-
-
-
-transporter.verify((err, success) => {
-  if (err) console.error('Email transporter error:', err);
-  else console.log('Email transporter ready');
-});
-
-
+// Generate PDF from list data
 async function generateListPDF(listName, items, message) {
   return new Promise((resolve, reject) => {
     try {
@@ -90,15 +78,6 @@ async function generateListPDF(listName, items, message) {
 
       doc.on("data", buffers.push.bind(buffers));
       doc.on("end", () => resolve(Buffer.concat(buffers)));
-
-      // ==== LOGO ====
-      const logoPath = path.join(__dirname, "/public/images/expendit.png");
-
-      doc.image(logoPath, {
-        fit: [120, 120],
-        align: "center",
-      });
-      doc.moveDown(1.5);
 
       // ===== HEADER =====
       doc.fontSize(20).text(listName, { align: "center" });
@@ -178,6 +157,61 @@ async function generateListPDF(listName, items, message) {
     }
   });
 }
+// Brevo (Sendinblue) transactional email
+async function sendEmailViaAPI(username, to, subject, text, pdfBuffer, filename) {
+  const pdfBase64 = pdfBuffer.toString('base64');
+  const emailData = {
+  sender: { 
+    name: process.env.API_FROM_NAME,          
+    email: process.env.API_FROM_EMAIL  
+  },
+  to: [{ email: to }],
+  subject: subject,
+  htmlContent: `
+    <h2>Hello '${username}',</h2>
+
+    <p>Thank you for using <strong>Expendit</strong>! We hope our app helps you stay organized and manage your lists efficiently.</p>
+
+    <p>Here’s a quick summary of your recent list <strong>${filename.replace('.pdf','')}</strong>:</p>
+
+    <p>Please see the attached PDF for your complete list details.</p>
+
+    <hr style="margin:20px 0;">
+
+    <p>We’d love your support! Follow us on all platforms to stay updated, share feedback, and get tips:</p>
+    <ul>
+      <li><a href="https://facebook.com/ExpenditApp" target="_blank">Facebook</a></li>
+      <li><a href="https://twitter.com/ExpenditApp" target="_blank">Twitter</a></li>
+      <li><a href="https://instagram.com/ExpenditApp" target="_blank">Instagram</a></li>
+      <li><a href="https://linkedin.com/company/ExpenditApp" target="_blank">LinkedIn</a></li>
+    </ul>
+
+    <p>If you have any questions or need help, feel free to <a href="mailto:support@expendit.com">contact us</a>. We’re always happy to assist!</p>
+
+    <p>Thanks again for choosing <strong>Expendit</strong>, your trusted app for managing lists efficiently!</p>
+    
+    <p>Warm regards,<br/>
+    The <strong>Expendit Team</strong></p>
+  `,
+  attachment: [
+    {
+      name: filename,
+      content: pdfBase64,
+      type: 'application/pdf'
+    }
+  ]
+};
+
+
+  try {
+    const api = new Brevo.TransactionalEmailsApi();
+    return await api.sendTransacEmail(emailData);
+  } catch (err) {
+    console.error("Failed to send email to", to, err.response?.body || err.message);
+    throw err;
+  }
+}
+
 
 
 // --- Routes ---
@@ -987,7 +1021,7 @@ cron.schedule('* * * * *', async () => {
 });
 
 // Getting Reminders
-app.get("/cron/check-reminders", async (req, res) => {
+app.get("/cron/check-reminders", async (req, res) => {  
   console.log("CRON route hit");
 
   try {
@@ -998,34 +1032,27 @@ app.get("/cron/check-reminders", async (req, res) => {
       JOIN lists l ON r.list_id = l.id
       WHERE r.sent = false AND r.remind_at <= NOW()
     `);
-
+        
     const reminders = remindersRes.rows;
 
     for (const row of reminders) {
-
       const itemsRes = await pool.query(
         "SELECT itemname, quantity, price FROM items WHERE list_id = $1",
         [row.list_id]
       );
       const items = itemsRes.rows;
 
-      // Generate PDF -> returns BUFFER not file
       const pdfBuffer = await generateListPDF(row.listname, items, row.message);
 
       try {
-        await transporter.sendMail({
-          from: FROM_EMAIL,
-          to: row.email,
-          subject: `Reminder: ${row.listname}`,
-          text: row.message,
-          attachments: [
-            {
-              filename: `${row.listname}.pdf`,
-              content: pdfBuffer,
-              contentType: "application/pdf"
-            }
-          ]
-        });
+        await sendEmailViaAPI(
+          row.username,
+          row.email,
+          `Reminder: ${row.listname}`,
+          row.message,
+          pdfBuffer,
+          `${row.listname}.pdf`
+        );
 
         console.log("Email sent to", row.email);
 
@@ -1034,16 +1061,17 @@ app.get("/cron/check-reminders", async (req, res) => {
           [row.id]
         );
       } catch (err) {
-        console.error("Failed to send email to", row.email, err);
+        console.error("Failed to send email to", row.email, err.message);
       }
     }
 
-    res.send("Cron check completed");
+    res.send("Cron check completed using HTTP API");
   } catch (err) {
     console.error(err);
     res.status(500).send(err.message);
   }
 });
+
 
 // Reminders page showing all reminders
 app.get('/reminders', async (req, res) => {
