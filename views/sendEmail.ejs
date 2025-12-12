@@ -11,23 +11,21 @@
 <body>
 <h1>Export Your List & Send via Email</h1>
 
-<!-- Step 1: Download Excel -->
-<form id="exportForm" method="POST" action="/cvtExcel/download">
-    <label for="listname">Select List (leave empty for all):</label>
+<form action="/cvtExcel/download" method="POST">
+    <label for="listname">Select list to export:</label>
     <select name="listname" id="listname">
         <option value="">All Lists</option>
         <% lists.forEach(list => { %>
             <option value="<%= list.listname %>"><%= list.listname %></option>
         <% }); %>
     </select>
-    <br><br>
-    <button type="submit">Download Excel</button>
+    <button type="submit" formaction="/cvtExcel/download">Export to Excel</button>
+    <button type="submit" formaction="/export-pdf">Export to PDF</button>
 </form>
 
 <br><br>
 
-<!-- Step 2: Open Email App -->
-<p>After downloading the Excel, click the button below to open your email app and manually attach the file:</p>
+<p>After downloading the Excel OR PDF, click the button below to open your email app and manually attach the file:</p>
 <button id="openMailBtn">Open Email App</button>
 
 <script>

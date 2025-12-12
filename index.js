@@ -32,9 +32,9 @@ const pool = new Pool({
   database: process.env.PG_DATABASE,
   password: process.env.PG_PASSWORD,
   port: process.env.PG_PORT,
-  ssl: {
-    rejectUnauthorized: false 
-  }
+//   ssl: {
+//     rejectUnauthorized: false 
+//   }
 });
 
 // Test DB connection
@@ -180,7 +180,6 @@ async function sendEmailViaAPI(username, to, subject, text, pdfBuffer, filename)
 
     <p>We’d love your support! Follow us on all platforms to stay updated, share feedback, and get tips:</p>
     <ul>
-      <li><a href="https://facebook.com/ExpenditApp" target="_blank">Facebook</a></li>
       <li><a href="https://twitter.com/ExpenditApp" target="_blank">Twitter</a></li>
       <li><a href="https://instagram.com/ExpenditApp" target="_blank">Instagram</a></li>
       <li><a href="https://linkedin.com/company/ExpenditApp" target="_blank">LinkedIn</a></li>
@@ -1405,6 +1404,34 @@ app.post("/cvtExcel/download", async (req, res) => {
         console.error(err);
         res.send("Error generating Excel: " + err.message);
     }
+});
+
+
+app.post("/export-pdf", async (req, res) => {
+  const { listname } = req.body;
+
+  const listRes = await pool.query(
+    "SELECT * FROM lists WHERE listname = $1",
+    [listname]
+  );
+
+  const itemsRes = await pool.query(
+    "SELECT * FROM items WHERE list_id = $1",
+    [listRes.rows[0].id]
+  );
+
+  const pdfBuffer = await generateListPDF(
+    listname,
+    itemsRes.rows,
+    listRes.rows[0].message
+  );
+
+  res.set({
+    "Content-Type": "application/pdf",
+    "Content-Disposition": `attachment; filename="${listname}.pdf"`
+  });
+
+  res.send(pdfBuffer);
 });
 
 // Email Excel

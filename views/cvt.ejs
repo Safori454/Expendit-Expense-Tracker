@@ -8,7 +8,10 @@
         button { padding: 5px 10px; margin: 2px; }
     </style>
 </head>
-    <h1>Export to Excel</h1>
+
+<body>
+
+<h1>Export Options</h1>
 
 <form action="/cvtExcel/download" method="POST">
     <label for="listname">Select list to export:</label>
@@ -18,7 +21,8 @@
             <option value="<%= list.listname %>"><%= list.listname %></option>
         <% }); %>
     </select>
-    <button type="submit">Export to Excel</button>
+    <button type="submit" formaction="/cvtExcel/download">Export to Excel</button>
+    <button type="submit" formaction="/export-pdf">Export to PDF</button>
 </form>
 
 <form action="/cvtExcel/email" method="GET">
@@ -26,8 +30,8 @@
     <button type="submit">Send Email</button>   
 </form>
 
-<br>
-<br>
+<br><br>
+
 <form action="/home" method="GET">
     <button type="submit">Home</button>
 </form>

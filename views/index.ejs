@@ -1,14 +1,12 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <!-- Design by foolishdeveloper.com -->
     <title>Expendit</title>
  
-    <!-- <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet"> -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
     <!--Stylesheet-->
     <style media="screen">
       *,
@@ -18,17 +16,23 @@
     margin: 0;
     box-sizing: border-box;
 }
-body{
-    /* background-color: #080710; */
-    background-image: url('/images/expendit.png'); /* relative path */
-    background-size: cover;       /* scale to cover entire viewport */
-    background-position: center;  /* center the image */
-    background-repeat: no-repeat; /* prevent tiling */
-    height: 100vh;                /* ensure body fills viewport */
+body {
+    background-image: url('/images/expendit.png');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
     margin: 0;
+    min-height: 100vh;
 }
 
+/* If screen is taller than the image — prevent vertical crop */
+@media (max-aspect-ratio: 16/9) {
+    body {
+        background-size: contain;
+        background-color: #101010;
 
+    }
+}
 .background{
     width: 430px;
     height: 520px;
@@ -37,9 +41,15 @@ body{
     left: 50%;
     top: 50%;
 }
+.background .shape{
+    height: 200px;
+    width: 200px;
+    position: absolute;
+    border-radius: 50%;
+}
 
 form{
-    height: 520px;
+    height: 530px;
     width: 400px;
     background-color: rgba(255,255,255,0.13);
     position: absolute;
@@ -86,7 +96,7 @@ input{
 ::placeholder{
     color: #e5e5e5;
 }
-button{
+.btn{
     margin-top: 50px;
     width: 100%;
     background-color: #ffffff;
@@ -97,29 +107,58 @@ button{
     border-radius: 5px;
     cursor: pointer;
 }
-
+.s-btn{
+    width: 50%;
+    margin-left: 12px;
+    background-color: #ffffff;
+    color: #080710;
+    padding: 5px 10px 10px 5px;
+    font-size: 18px;
+    font-weight: 600;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.social{
+  margin-top: 30px;
+  display: flex;
+}
+.social div{
+  background: red;
+  width: 150px;
+  border-radius: 3px;
+  padding: 5px 10px 10px 5px;
+  background-color: rgba(255,255,255,0.27);
+  color: #eaf0fb;
+  text-align: center;
+}
+.social div:hover{
+  background-color: rgba(255,255,255,0.47);
+}
+.social .fb{
+  margin-left: 25px;
+}
+.social i{
+  margin-right: 4px;
+}
 
     </style>
 </head>
 <body>
-    <div class="background">
-        <div class="shape"></div>
-        <div class="shape"></div>
-    </div>
-
     <form method="POST">
-        <label>Username
-            <input type="text" name="username" required>
-        </label>
-        <label>Password
-            <input type="password" name="password" required>
-        </label>  
-        <div>
-            <button type="submit" formaction="/login/home">Sign In</button>
-            <% if (error) { %>
+        <h3>Login Here</h3>
+
+        <label for="username">Username</label>
+        <input type="text" placeholder="Email or Username" id="username" name="username">
+
+        <label for="password">Password</label>
+        <input type="password" placeholder="Password" id="password" name="password">
+        <button type="submit" formaction="/login/home" class="btn">Sign In</button>
+        <% if (error) { %>
                 <p style="color:red;text-align:center; margin-top: 5px;"><%= error %></p>
             <% } %>
-            <button type="button" onclick="window.location.href='/login/signup'">Sign Up</button>
+        <div class="social">
+            <div class="go"><i class="fab fa-google"></i>  Google</div>
+            <button type="button" onclick="window.location.href='/login/signup'" class="s-btn">Sign Up</button>
         </div>
     </form>
 </body>
