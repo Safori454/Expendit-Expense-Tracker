@@ -1,84 +1,44 @@
 {
   "name": "expensetracker",
   "version": "1.0.0",
-  "description": "Expendit - Expense Tracker Web Application",
-  "main": "electron/main.js",
+  "description": "Expendit is a web-based expense tracker that allows users to create, manage, and track expense lists, set reminders, and generate reports in PDF or Excel formats. \r Built with Node.js, Express, PostgreSQL, and EJS, it provides a simple, intuitive interface for personal financial management.",
+  "main": "index.js",
   "scripts": {
-    "dev": "nodemon index.js",
-    "dev:api": "nodemon server/index.js",
-    "dev:next": "next dev",
-    "dev:all": "concurrently \"npm run dev:api\" \"npm run dev:next\"",
-    "start": "node index.js",
-    "start:api": "node server/index.js",
-    "build": "next build",
-    "start:next": "next start",
-    "electron": "electron .",
-    "electron:dev": "NODE_ENV=development electron .",
-    "build:electron": "electron-builder",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["expense", "tracker", "budget", "finance"],
-  "author": "Godfred Safo Ofori",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Safori454/Expendit-Expense-Tracker.git"
+  },
+  "keywords": [],
+  "author": "",
   "license": "ISC",
   "type": "module",
+  "bugs": {
+    "url": "https://github.com/Safori454/Expendit-Expense-Tracker/issues"
+  },
+  "homepage": "https://github.com/Safori454/Expendit-Expense-Tracker#readme",
   "dependencies": {
     "axios": "^1.13.2",
+    "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
-    "body-parser": "^2.2.0",
-    "cors": "^2.8.5",
+    "body-parser": "^2.2.1",
+    "cron": "^4.4.0",
     "dotenv": "^17.2.3",
     "ejs": "^3.1.10",
     "exceljs": "^4.4.0",
-    "express": "^5.1.0",
+    "express": "^5.2.1",
     "express-session": "^1.18.2",
     "form-data": "^4.0.5",
     "fs": "^0.0.1-security",
-    "next": "^14.0.0",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.11",
-    "nodemon": "^3.1.11",
     "path": "^0.12.7",
     "pdfkit": "^0.17.2",
     "pg": "^8.16.3",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "resend": "^6.5.2",
-    "sib-api-v3-sdk": "^8.5.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20.0.0",
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "concurrently": "^8.2.2",
-    "electron": "^28.0.0",
-    "electron-builder": "^24.9.1",
-    "typescript": "^5.0.0"
-  },
-  "build": {
-    "appId": "com.expendit.tracker",
-    "productName": "Expendit",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "electron/**/*",
-      "public/**/*",
-      "views/**/*",
-      "index.js",
-      "package.json",
-      "node_modules/**/*"
-    ],
-    "win": {
-      "target": "nsis",
-      "icon": "public/images/expendit.png"
-    },
-    "mac": {
-      "target": "dmg",
-      "icon": "public/images/expendit.png"
-    },
-    "linux": {
-      "target": "AppImage",
-      "icon": "public/images/expendit.png"
-    }
+    "pkg": "^5.8.1",
+    "session": "^0.1.0",
+    "sib-api-v3-sdk": "^8.5.0",
+    "url": "^0.11.4"
   }
 }
