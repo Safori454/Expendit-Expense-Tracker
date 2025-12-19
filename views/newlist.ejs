@@ -1,81 +1,114 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= listname %> List</title>
-    <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    h2 { margin-bottom: 5px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
-    th { background-color: #f4f4f4; font-weight: bold; }
-    input { width: 25%; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
-    .btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; margin: 2px; }
-    .add-btn { background-color: #4CAF50; color: white; }
-    .remove-btn { background-color: #e60000; color: white;}
-    .save-btn { background-color: #007bff; color: white;}
-    .save-btn:hover { background-color: #00c6ff; }
-    .add-btn:hover { background-color: #45a049; }
-    .remove-btn:hover { background-color: #cc0000; }
-    #addItemForm { display: none; margin-top: 20px; }
-</style>
-</head>
-<body>
-    <h1><%= listname %></h1>
+<%- include('partials/header', { title: listname }) %>
 
-    <!-- Add Item Form -->
-    <form action="/additems" method="POST">
-        <input type="text" name="itemname" placeholder="Item" required>
-        <input type="number" name="quantity" placeholder="Quantity" required>
-        <input type="number" step="0.01" name="price" placeholder="Price" required>
-        <input type="hidden" name="listname" value="<%= listname %>">
-        <button type="submit" class="btn add-btn">Add Item</button>
-    </form>
+<div class="page-head">
+  <div>
+    <h1 class="h1"><%= listname %></h1>
+    <p class="muted">Add items, review totals, and save when you’re ready.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-ghost" href="/home">Dashboard</a>
+    <a class="btn btn-ghost" href="/history">History</a>
+  </div>
+</div>
 
-    <h2>Items Added:</h2>
+<section class="grid grid-2">
+  <div class="card">
+    <div class="card-body">
+      <h2 class="h2">Add item</h2>
+      <form class="form" action="/additems" method="POST">
+        <input type="hidden" name="listname" value="<%= listname %>" />
+
+        <div class="field">
+          <label class="label" for="itemname">Item</label>
+          <input class="input" id="itemname" type="text" name="itemname" placeholder="e.g. Rice" required />
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label class="label" for="quantity">Quantity</label>
+            <input class="input" id="quantity" type="number" name="quantity" placeholder="e.g. 2" min="0" step="1" required />
+          </div>
+          <div class="field">
+            <label class="label" for="price">Price</label>
+            <input class="input" id="price" type="number" step="0.01" name="price" placeholder="e.g. 12.50" min="0" required />
+          </div>
+        </div>
+
+        <button class="btn btn-primary" type="submit">Add item</button>
+      </form>
+    </div>
+  </div>
+<div class="spacer-16"></div>
+</section>
+
+<section class="card">
+  <div class="card-body">
+    <div class="page-head">
+      <div>
+        <h2 class="h2">Items</h2>
+        <p class="muted">Edit or remove items at any time.</p>
+      </div>
+    </div>
+
     <% if (!items || items.length === 0) { %>
-        <p>No items added yet.</p>
+      <div class="alert">
+        No items yet — add your first one above.
+      </div>
     <% } else { %>
-        <table>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
             <tr>
-                <th>Item Name</th>
-                <th>Quantity</th>
-                <th>Price</th>
-                <th>Total</th>
-                <th>Actions</th>
+              <th>Item</th>
+              <th class="td-center">Qty</th>
+              <th class="td-right">Price</th>
+              <th class="td-right">Total</th>
+              <th>Actions</th>
             </tr>
+          </thead>
+          <tbody>
             <% items.forEach(function(item) { %>
-            <tr>
+              <tr>
                 <td><%= item.itemname %></td>
-                <td><%= item.quantity %></td>
-                <td><%= item.price.toFixed(2) %></td>
-                <td><%= (item.quantity * item.price).toFixed(2) %></td>
+                <td class="td-center"><%= item.quantity %></td>
+                <td class="td-right">GH₵ <%= Number(item.price).toFixed(2) %></td>
+                <td class="td-right">GH₵ <%= (Number(item.quantity) * Number(item.price)).toFixed(2) %></td>
                 <td>
-                    <a href="/edititem/<%= item.id %>?listname=<%= listname %>"><button type="button" class="btn add-btn">Edit</button></a>
-                    <form action="/deleteitem" method="POST" style="display:inline;">
-                        <input type="hidden" name="id" value="<%= item.id %>">
-                        <input type="hidden" name="listname" value="<%= listname %>">
-                        <button type="submit" class="btn remove-btn">Remove</button>
+                  <div class="table-actions">
+                    <a class="btn btn-sm" href="/edititem/<%= item.id %>?listname=<%= encodeURIComponent(listname) %>">Edit</a>
+                    <form action="/deleteitem" method="POST" onsubmit="return confirm('Remove this item?');">
+                      <input type="hidden" name="id" value="<%= item.id %>" />
+                      <input type="hidden" name="listname" value="<%= listname %>" />
+                      <button class="btn btn-danger btn-sm" type="submit">Remove</button>
                     </form>
+                  </div>
                 </td>
-            </tr>
+              </tr>
             <% }) %>
+          </tbody>
         </table>
-        <br>
-        <!-- Total Sum -->
-    <div style="float: right;"><Label>List Total: <input type="text" value="<%= (total || 0).toFixed(2) %>" readonly></Label></div>
-    <br>
-     <!-- Save List -->
-    <form action="/savelist" method="POST">
-        <input type="hidden" name="listname" value="<%= listname %>">
-        <button type="submit" class="btn save-btn" style="width: 100%; text-align: center; margin-top: 25px; padding: 8px;">Save List</button>
-    </form>
+      </div>
     <% } %>
-    
-    
-    
+  </div>
+</section>
 
-    
-</body>
-</html>
+
+<section class="grid grid-2" style="margin-top: 25px;">
+  <div class="card">
+    <div class="card-body">
+      <h2 class="h2">Summary</h2>
+      <p class="muted">Current list total</p>
+      <div class="spacer-8"></div>
+      <div class="h1">GH₵ <%= (total || 0).toFixed(2) %></div>
+      <div class="spacer-12"></div>
+      <form action="/savelist" method="POST">
+        <input type="hidden" name="listname" value="<%= listname %>" />
+        <button class="btn btn-primary btn-block" type="submit">Save list</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+
+
+<%- include('partials/footer') %>

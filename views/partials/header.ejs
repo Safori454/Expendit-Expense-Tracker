@@ -1,0 +1,57 @@
+<%
+  const pageTitle =
+    (typeof title !== "undefined" && title)
+      ? `${title} • Expendit`
+      : "Expendit";
+  const navHidden = (typeof hideNav !== "undefined" && hideNav) ? true : false;
+  const bodyClassName = (typeof bodyClass !== "undefined" && bodyClass) ? bodyClass : "";
+%>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= pageTitle %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles/main.css" />
+</head>
+<body class="app <%= bodyClassName %>">
+  <% if (!navHidden) { %>
+    <header class="app-header">
+      <div class="container header-inner">
+        <a class="brand" href="/home" aria-label="Expendit home">
+          <span class="brand-mark" aria-hidden="true">E</span>
+          <span class="brand-name">Expendit</span>
+        </a>
+
+        <nav class="nav" aria-label="Primary">
+          <!-- <a class="nav-link" href="/home">Dashboard</a> -->
+
+          <form class="nav-form" method="POST" action="/newlist">
+            <button class="nav-link nav-button" type="submit">New list</button>
+          </form>
+
+          <a class="nav-link" href="/history">History</a>
+          <a class="nav-link" href="/reminders">Reminders</a>
+
+          <form class="nav-form" method="POST" action="/cvtExcel">
+            <button class="nav-link nav-button" type="submit">Exports</button>
+          </form>
+
+          <a class="nav-link nav-link-muted" href="/logout">Logout</a>
+        </nav>
+
+        <div class="header-user">
+          <% if (username) { %>
+            <span class="pill">Signed in as <strong><%= username %></strong></span>
+          <% } %>
+        </div>
+      </div>
+    </header>
+  <% } %>
+
+  <main class="app-main">
+    <div class="container">
+

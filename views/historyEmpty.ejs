@@ -1,20 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Empty List</title>
-</head>
-<body>
+<%- include('partials/header', { title: 'Empty list' }) %>
 
-<h2><%= listname %> is empty</h2>
-<p>This list has no items yet.</p>
+<div class="page-head">
+  <div>
+    <h1 class="h1"><%= listname %></h1>
+    <p class="muted">This list has no items yet.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-ghost" href="/home">Dashboard</a>
+    <a class="btn btn-primary" href="/list?listname=<%= encodeURIComponent(listname) %>">Open list</a>
+  </div>
+</div>
 
-<form action="/additems" method="POST">
-    <input type="hidden" name="listname" value="<%= listname %>">
-    <button type="submit">Add Items</button>
-</form>
-<form action="/home" method="GET">
-    <button type="submit">Home</button>
-</form>
-</body>
-</html>
+<div class="card">
+  <div class="card-body">
+    <div class="alert">Add your first item inside the list page.</div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

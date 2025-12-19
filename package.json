@@ -1,19 +1,31 @@
 {
   "name": "expensetracker",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Expendit - Expense Tracker Web Application",
+  "main": "electron/main.js",
   "scripts": {
+    "dev": "nodemon index.js",
+    "dev:api": "nodemon server/index.js",
+    "dev:next": "next dev",
+    "dev:all": "concurrently \"npm run dev:api\" \"npm run dev:next\"",
+    "start": "node index.js",
+    "start:api": "node server/index.js",
+    "build": "next build",
+    "start:next": "next start",
+    "electron": "electron .",
+    "electron:dev": "NODE_ENV=development electron .",
+    "build:electron": "electron-builder",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["expense", "tracker", "budget", "finance"],
+  "author": "Godfred Safo Ofori",
   "license": "ISC",
   "type": "module",
   "dependencies": {
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "ejs": "^3.1.10",
     "exceljs": "^4.4.0",
@@ -21,13 +33,52 @@
     "express-session": "^1.18.2",
     "form-data": "^4.0.5",
     "fs": "^0.0.1-security",
+    "next": "^14.0.0",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.11",
     "nodemon": "^3.1.11",
     "path": "^0.12.7",
     "pdfkit": "^0.17.2",
     "pg": "^8.16.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "resend": "^6.5.2",
     "sib-api-v3-sdk": "^8.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "concurrently": "^8.2.2",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "typescript": "^5.0.0"
+  },
+  "build": {
+    "appId": "com.expendit.tracker",
+    "productName": "Expendit",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "public/**/*",
+      "views/**/*",
+      "index.js",
+      "package.json",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "public/images/expendit.png"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "public/images/expendit.png"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "public/images/expendit.png"
+    }
   }
 }

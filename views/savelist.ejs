@@ -1,31 +1,30 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expendit</title>
-</head>
-<body>
-    <h1>'<%= listname %>' List Saved Successfully</h1>
+<%- include('partials/header', { title: 'List saved' }) %>
 
-    <form method="post" action="/setreminder">
-        <input type="hidden" name="listname" value="<%= listname %>">
-        <button type="submit">Set Reminder</button>
-    </form>
-    <!-- View List -->
-    <form method="GET" action="/viewsaved">
-        <input type="hidden" name="listname" value="<%= listname %>">
-        <button type="submit">View List</button>
-    </form>
+<div class="page-head">
+  <div>
+    <h1 class="h1">List saved</h1>
+    <p class="muted"><strong>"<%= listname %>"</strong> was saved successfully.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-ghost" href="/home">Dashboard</a>
+  </div>
+</div>
 
-    <!-- Create New List -->
-    <form action="/newlist" method="post">
-        <button type="submit">Create New List</button>
-    </form>
+<div class="card">
+  <div class="card-body">
+    <div class="page-actions">
+      <form method="POST" action="/setreminder">
+        <input type="hidden" name="listname" value="<%= listname %>" />
+        <button class="btn btn-primary" type="submit">Set a reminder</button>
+      </form>
 
-    <!-- Home -->
-    <form action="/home" method="GET" style="display:inline;">
-        <button type="submit">Home</button>
-    </form>
-</body>
-</html>
+      <a class="btn" href="/viewsaved?listname=<%= encodeURIComponent(listname) %>">View list</a>
+
+      <form action="/newlist" method="POST">
+        <button class="btn btn-ghost" type="submit">Create another list</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

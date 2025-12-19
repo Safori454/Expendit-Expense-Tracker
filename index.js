@@ -234,6 +234,12 @@ app.post('/login/register', async (req, res) => {
             success: null
         });
     }
+    if(password.length<6){
+        return res.render('signup.ejs', {
+            error: '! Make Strong Password,',
+            success: null
+        });
+    }
 
     try {
         // Check existing username

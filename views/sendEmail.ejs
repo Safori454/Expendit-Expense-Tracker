@@ -1,46 +1,56 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expendit</title>
-    <style>
-        button { padding: 5px 10px; margin: 2px; }
-    </style>
-</head>
-<body>
-<h1>Export Your List & Send via Email</h1>
+<%- include('partials/header', { title: 'Email exports' }) %>
 
-<form action="/cvtExcel/download" method="POST">
-    <label for="listname">Select list to export:</label>
-    <select name="listname" id="listname">
-        <option value="">All Lists</option>
-        <% lists.forEach(list => { %>
+<div class="page-head">
+  <div>
+    <h1 class="h1">Email exports</h1>
+    <p class="muted">Export first, then open your email app to attach the file.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-ghost" href="/cvtExcel/email">Refresh</a>
+    <form method="POST" action="/cvtExcel">
+      <button class="btn btn-ghost" type="submit">Back to exports</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <form class="form" action="/cvtExcel/download" method="POST">
+      <div class="field">
+        <label class="label" for="listname">Select a list</label>
+        <select class="select" name="listname" id="listname">
+          <option value="">All Lists</option>
+          <% lists.forEach(list => { %>
             <option value="<%= list.listname %>"><%= list.listname %></option>
-        <% }); %>
-    </select>
-    <button type="submit" formaction="/cvtExcel/download">Export to Excel</button>
-    <button type="submit" formaction="/export-pdf">Export to PDF</button>
-</form>
+          <% }); %>
+        </select>
+      </div>
 
-<br><br>
+      <div class="page-actions">
+        <button class="btn btn-primary" type="submit" formaction="/cvtExcel/download">Export Excel</button>
+        <button class="btn" type="submit" formaction="/export-pdf">Export PDF</button>
+      </div>
+    </form>
 
-<p>After downloading the Excel OR PDF, click the button below to open your email app and manually attach the file:</p>
-<button id="openMailBtn">Open Email App</button>
+    <div class="spacer-16"></div>
+
+    <div class="alert">
+      After downloading the Excel or PDF, click below to open your email app and attach the file manually.
+    </div>
+    <div class="spacer-12"></div>
+    <button class="btn btn-ghost" id="openMailBtn" type="button">Open email app</button>
+  </div>
+</div>
 
 <script>
-document.getElementById("openMailBtn").addEventListener("click", function() {
-    const subject = encodeURIComponent("Expense List Export");
-    const body = encodeURIComponent("Hi,\n\nAttached is the exported expense list. Please check.\n\n- Expendit App");
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
-});
+  const btn = document.getElementById("openMailBtn");
+  if (btn) {
+    btn.addEventListener("click", function () {
+      const subject = encodeURIComponent("Expense List Export");
+      const body = encodeURIComponent("Hi,\\n\\nAttached is the exported expense list. Please check.\\n\\n- Expendit App");
+      window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    });
+  }
 </script>
 
-<br><br>
-
-<form action="/home" method="GET">
-    <button type="submit">Home</button>
-</form>
-
-</body>
-</html>
+<%- include('partials/footer') %>

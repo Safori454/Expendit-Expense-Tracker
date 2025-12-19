@@ -1,32 +1,43 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Item - <%= listname %></title>
-</head>
-<body>
-    <h2>Edit Item in <%= listname %></h2>
+<%- include('partials/header', { title: 'Edit history item' }) %>
 
-    <form action="/history/edititem/update" method="POST">
-        <input type="hidden" name="id" value="<%= itemToEdit.id %>">
-        <input type="hidden" name="listname" value="<%= listname %>">
+<div class="page-head">
+  <div>
+    <h1 class="h1">Edit item</h1>
+    <p class="muted">List: <strong><%= listname %></strong></p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-ghost" href="/history/data?listname=<%= encodeURIComponent(listname) %>">Back</a>
+  </div>
+</div>
 
-        <label>Item Name</label>
-        <input type="text" name="itemname" value="<%= itemToEdit.itemname %>" required><br>
+<div class="card">
+  <div class="card-body">
+    <form class="form" action="/history/edititem/update" method="POST">
+      <input type="hidden" name="id" value="<%= itemToEdit.id %>" />
+      <input type="hidden" name="listname" value="<%= listname %>" />
 
-        <label>Quantity</label>
-        <input type="number" name="quantity" value="<%= itemToEdit.quantity %>" required><br>
+      <div class="field">
+        <label class="label" for="itemname">Item</label>
+        <input class="input" id="itemname" type="text" name="itemname" value="<%= itemToEdit.itemname %>" required />
+      </div>
 
-        <label>Price</label>
-        <input type="number" step="0.01" name="price" value="<%= itemToEdit.price %>" required><br>
+      <div class="form-row">
+        <div class="field">
+          <label class="label" for="quantity">Quantity</label>
+          <input class="input" id="quantity" type="number" name="quantity" value="<%= itemToEdit.quantity %>" min="0" step="1" required />
+        </div>
+        <div class="field">
+          <label class="label" for="price">Price</label>
+          <input class="input" id="price" type="number" step="0.01" name="price" value="<%= itemToEdit.price %>" min="0" required />
+        </div>
+      </div>
 
-        <button type="submit">Update Item</button>
+      <div class="page-actions">
+        <button class="btn btn-primary" type="submit">Save</button>
+        <a class="btn btn-ghost" href="/history/data?listname=<%= encodeURIComponent(listname) %>">Cancel</a>
+      </div>
     </form>
+  </div>
+</div>
 
-    <form action="/history/data" method="POST" style="margin-top: 10px;">
-        <input type="hidden" name="listing" value="<%= listname %>">
-        <button type="submit">Cancel</button>
-    </form>
-</body>
-</html>
+<%- include('partials/footer') %>

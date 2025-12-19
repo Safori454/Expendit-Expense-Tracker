@@ -1,61 +1,67 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Set Reminder for <%= listname %></title>
-</head>
-<body>
-    <h2>Set Reminder for "<%= listname %>"</h2>
+<%- include('partials/header', { title: 'Set reminder' }) %>
 
-    <form id="reminderForm" action="/list/set-reminder" method="POST">
-        <input type="hidden" name="listname" value="<%= listname %>">
+<div class="page-head">
+  <div>
+    <h1 class="h1">Set reminder</h1>
+    <p class="muted">List: <strong><%= listname %></strong></p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-ghost" href="/home">Dashboard</a>
+  </div>
+</div>
 
-        <label>Message / Note (optional):</label><br>
-        <input type="text" name="message" placeholder="Add a note or reference"><br><br>
+<div class="card">
+  <div class="card-body">
+    <form id="reminderForm" class="form" action="/list/set-reminder" method="POST">
+      <input type="hidden" name="listname" value="<%= listname %>" />
 
-        <label>Date:</label><br>
-        <input type="date" name="date" required><br><br>
+      <div class="field">
+        <label class="label" for="message">Message (optional)</label>
+        <input class="input" id="message" type="text" name="message" placeholder="Add a note or reference" />
+      </div>
 
-        <label>Time:</label><br>
-        <input type="time" name="time" required><br><br>
+      <div class="field">
+        <label class="label" for="email">Email</label>
+        <input class="input" type="email" name="email" id="email" required placeholder="Your email" />
+      </div>
 
-        <label for="email">Email:</label>
-        <input type="email" name="email" id="email" required placeholder="Your email"><br><br>
+      <div class="form-row">
+        <div class="field">
+          <label class="label" for="date">Date</label>
+          <input class="input" id="date" type="date" name="date" required />
+        </div>
+        <div class="field">
+          <label class="label" for="time">Time</label>
+          <input class="input" id="time" type="time" name="time" required />
+        </div>
+      </div>
 
-        <button type="submit">Save Reminder</button>
+      <button class="btn btn-primary" type="submit">Save reminder</button>
     </form>
+  </div>
+</div>
 
-    <br>
-    <form action="/home" method="GET" style="display:inline;">
-        <button type="submit">Home</button>
-    </form>
+<!-- Prevent past date/time -->
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("reminderForm");
+    const dateInput = document.querySelector("input[name='date']");
+    const timeInput = document.querySelector("input[name='time']");
+    if (!form || !dateInput || !timeInput) return;
 
-    <!-- ✅ Prevent past date/time -->
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const form = document.getElementById("reminderForm");
-            const dateInput = document.querySelector("input[name='date']");
-            const timeInput = document.querySelector("input[name='time']");
+    form.addEventListener("submit", (e) => {
+      const date = dateInput.value;
+      const time = timeInput.value;
+      if (!date || !time) return;
 
-            form.addEventListener("submit", (e) => {
-                const date = dateInput.value;
-                const time = timeInput.value;
+      const chosen = new Date(`${date} ${time}`);
+      const now = new Date();
+      if (chosen <= now) {
+        e.preventDefault();
+        alert("You cannot set a reminder in the past. Please choose a future date and time.");
+      }
+    });
+  });
+</script>
 
-                if (!date || !time) {
-                    alert("Please choose both date and time.");
-                    e.preventDefault();
-                    return;
-                }
-
-                const chosen = new Date(`${date} ${time}`);
-                const now = new Date();
-
-                if (chosen <= now) {
-                    e.preventDefault();
-                    alert("❗ You cannot set a reminder in the past.\nPlease choose a future date and time.");
-                }
-            });
-        });
-    </script>
-
-</body>
-</html>
+<%- include('partials/footer') %>

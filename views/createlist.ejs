@@ -1,77 +1,95 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expendit - Create List</title>
-    <style>
-        button { padding: 5px 10px; margin: 2px; }
-    </style>
-</head>
-<body>
+<%
+  const pageTitle = editMode
+    ? "Rename list"
+    : (listname ? "Expense List is Ready" : "Create your Expense list");
+%>
+<%- include('partials/header', { title: pageTitle }) %>
+
+<div class="page-head">
+  <div>
+    <h1 class="h1"><%= pageTitle %></h1>
+    <p class="muted">Keep your expenses organized into separate lists.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-ghost" href="/home">Dashboard</a>
+  </div>
+</div>
 
 <!-- CASE 1: List has been created -->
 <% if (listname && !editMode) { %>
-    <form action="/list" method="POST">
-        <p style="color: green;">"<%= listname %>" List created successfully!</p>
-        <input type="hidden" name="listname" value="<%= listname %>">
-        <button type="submit">Go to List</button>
-    </form>
+  <div class="card">
+    <div class="card-body">
+      <div class="alert">
+        <strong>"<%= listname %>"</strong> list created successfully.
+      </div>
+      <div class="spacer-16"></div>
+      <div class="page-actions">
+        <form action="/list" method="POST">
+          <input type="hidden" name="listname" value="<%= listname %>" />
+          <button class="btn btn-primary" type="submit">Open list</button>
+        </form>
 
-    <form action="/editsheet" method="post">
-        <input type="hidden" name="listname" value="<%= listname %>">
-        <button type="submit">Edit List Name</button>
-    </form>
+        <form action="/editsheet" method="POST">
+          <input type="hidden" name="listname" value="<%= listname %>" />
+          <button class="btn btn-ghost" type="submit">Rename list</button>
+        </form>
+
+        <form action="/newlist" method="POST">
+          <button class="btn" type="submit">Create another</button>
+        </form>
+      </div>
+    </div>
+  </div>
 <% } %>
-
 
 <!-- CASE 2: Editing existing list name -->
 <% if (editMode) { %>
-    <h1>Edit List Name</h1>
+  <div class="card">
+    <div class="card-body">
+      <form class="form" action="/updatesheet" method="POST">
+        <input type="hidden" name="oldname" value="<%= listname %>" />
 
-    <form action="/updatesheet" method="POST">
-        <!-- Keep old name -->
-        <input type="hidden" name="oldname" value="<%= listname %>">
+        <div class="field">
+          <label class="label" for="newname">New list name</label>
+          <input class="input" type="text" id="newname" name="listname" required value="<%= listname %>" autocomplete="off" />
+        </div>
 
-        <label for="newname">Enter new list name:</label>
-        <input type="text" id="newname" name="listname" required value="<%= listname %>" autofocus autocomplete="off">
-
-        <button type="submit">Update</button>
-    </form>
-
+        <div class="page-actions">
+          <button class="btn btn-primary" type="submit">Save</button>
+          <a class="btn btn-ghost" href="/list?listname=<%= encodeURIComponent(listname) %>">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
 <% } %>
-
 
 <!-- CASE 3: Create a new list -->
 <% if (!listname && !editMode) { %>
-    <h1>Create a New List</h1>
+  <div class="card">
+    <div class="card-body">
+      <form class="form" action="/newsheet" method="POST">
+        <div class="field">
+          <label class="label" for="listname">List name</label>
+          <input class="input" type="text" id="listname" name="listname" required placeholder="e.g. Groceries" autofocus autocomplete="off" />
+        </div>
 
-    <form action="/newsheet" method="POST">
-        <label for="listname">Enter the name of the list:</label>
-        <input type="text" id="listname" name="listname" required placeholder="e.g Groceries" autofocus autocomplete="off">
-        <button type="submit">Create</button>
-    </form>
+        <button class="btn btn-primary" type="submit">Create list</button>
+      </form>
+    </div>
+  </div>
 <% } %>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
 
-    if (editMode) { 
-        const input = document.getElementById("newname");
-        if (input) {
-            // Focus input
-            input.focus();
+<% if (editMode) { %>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const input = document.getElementById("newname");
+      if (!input) return;
+      input.focus();
+      input.select();
+      const length = input.value.length;
+      input.setSelectionRange(length, length);
+    });
+  </script>
+<% } %>
 
-            // First select all text
-            input.select();
-
-            // Then move cursor to the end
-            const length = input.value.length;
-            input.setSelectionRange(length, length);
-        }
-   } 
-
-});
-</script>
-
-</body>
-</html>
+<%- include('partials/footer') %>

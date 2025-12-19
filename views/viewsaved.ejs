@@ -1,33 +1,47 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expendit - <%= listname %></title>
-</head>
-<body>
-    <h1>Saved List: '<%= listname %>'</h1>
+<%- include('partials/header', { title: `Saved list: ${listname}` }) %>
 
-    <% if (items.length > 0) { %>
-        <ul>
-            <% items.forEach((item, index) => { %>
-                <li>
-                    <%= item.itemname %> - Qty: <%= item.quantity %> - Price: <%= item.price %> - Total: <%= item.quantity * item.price %>
-                </li>
+<div class="page-head">
+  <div>
+    <h1 class="h1"><%= listname %></h1>
+    <p class="muted">Saved list preview.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-ghost" href="/home">Dashboard</a>
+    <form action="/newlist" method="POST">
+      <button class="btn btn-ghost" type="submit">New list</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <% if (items && items.length > 0) { %>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th class="td-center">Qty</th>
+              <th class="td-right">Price</th>
+              <th class="td-right">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% items.forEach((item) => { %>
+              <tr>
+                <td><%= item.itemname %></td>
+                <td class="td-center"><%= item.quantity %></td>
+                <td class="td-right">GH₵ <%= Number(item.price).toFixed(2) %></td>
+                <td class="td-right">GH₵ <%= (Number(item.quantity) * Number(item.price)).toFixed(2) %></td>
+              </tr>
             <% }) %>
-        </ul>
+          </tbody>
+        </table>
+      </div>
     <% } else { %>
-        <p>No items saved in this list.</p>
+      <div class="alert">No items saved in this list.</div>
     <% } %>
+  </div>
+</div>
 
-    <!-- Create New List -->
-    <form action="/newlist" method="post">
-        <button type="submit">Create New List</button>
-    </form>
-
-    <!-- Home -->
-    <form action="/home" method="GET" style="display:inline;">
-        <button type="submit">Home</button>
-    </form>
-</body>
-</html>
+<%- include('partials/footer') %>

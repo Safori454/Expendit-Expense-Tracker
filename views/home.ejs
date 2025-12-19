@@ -1,48 +1,242 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expendit</title>
-    <style>
-        button { padding: 5px 10px; margin: 2px; }
-    </style>
-</head>
-<body>
-    <div style="background-color: yellow; padding: 10px; text-align: center;">
-        ⚠️ This is a testing version. Features may change. ⚠️
+<%- include('partials/header', { title: 'Dashboard' }) %>
+
+<!-- <div class="banner banner-warning">
+  <strong>Testing version</strong> — features may change.
+</div> -->
+
+<section class="hero">
+  <div class="page-head">
+    <div class="dash-title">
+      <div>
+        <h1 class="h1">
+          Welcome<% if (username) { %>, <%= username %><% } %>.
+        </h1>
+        <p class="muted">Create expense lists, track totals, set reminders, and export reports.</p>
+      </div>
     </div>
+    <div class="page-actions">
+      <form method="POST" action="/newlist">
+        <button class="btn btn-primary" type="submit">New list</button>
+      </form>
+      <a class="btn btn-ghost" href="/history">View history</a>
+    </div>
+  </div>
+</section>
 
-    <% if (username) { %>
-        <h1>Hello <%= username %>, Welcome to Expendit</h1>
-    <% } else { %>
-        <h1>Welcome to Expendit</h1>
-    <% } %>
+<section class="grid grid-3">
+  <div class="card calendar span-2">
+    <div class="card-body">
+      <div class="calendar-head">
+        <div>
+          <h2 class="h2" id="calendarTitle">Calendar</h2>
+          <p class="muted" id="calendarMeta">Today</p>
+        </div>
+        <div class="calendar-actions">
+          <button class="btn btn-sm btn-ghost" type="button" id="calPrev" aria-label="Previous month">‹</button>
+          <button class="btn btn-sm" type="button" id="calToday">Today</button>
+          <button class="btn btn-sm btn-ghost" type="button" id="calNext" aria-label="Next month">›</button>
+        </div>
+      </div>
 
-    <!-- Add New Expense -->
-    <form method="POST" action="/newlist">
-        <button type="submit">Add New Expense</button>
-    </form>
+      <div class="calendar-weekdays" aria-hidden="true">
+        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+      </div>
+      <div class="calendar-grid" id="calendarGrid" role="grid" aria-label="Calendar month view"></div>
+    </div>
+  </div>
 
-    <!-- History -->
-    <form method="GET" action="/history">
-        <button type="submit">History</button>
-    </form>
+  <div class="card">
+    <div class="card-body">
+      <h2 class="h2">Create a list</h2>
+      <p class="muted">Start a new list in seconds.</p>
 
-    <!-- Reminders -->
-    <form method="GET" action="/reminders">
-        <button type="submit">Reminders</button>
-    </form>
+      <div class="spacer-12"></div>
 
-    <!-- Convert to Excel -->
-    <form method="POST" action="/cvtExcel">
-        <button type="submit">Exports</button>
-    </form>
+      <div class="mini-slider" aria-label="Sponsored ads" id="adSlider">
+        <div class="mini-slider-track" id="adTrack">
+          <div class="mini-slide">
+            <a class="ad-link" href="#" aria-label="Ad: Track spending smarter (tap to see next)">
+              <img src="/images/ads/IMG_9163.WEBP" alt="Ad: Track spending smarter" loading="lazy" />
+            </a>
+          </div>
+          <div class="mini-slide">
+            <a class="ad-link" href="#" aria-label="Ad: Save time on exports (tap to see next)">
+              <img src="/images/ads/IMG_9164.JPG" alt="Ad: Save time on exports" loading="lazy" />
+            </a>
+          </div>
+          <div class="mini-slide">
+            <a class="ad-link" href="#" aria-label="Ad: Never miss a due date (tap to see next)">
+              <img src="/images/ads/IMG_9165.JPG" alt="Ad: Never miss a due date" loading="lazy" />
+            </a>
+          </div>
+        </div>
+      </div>
 
-    <!-- Logout -->
-    <form method="get" action="/logout">
-        <button type="submit">Logout</button>
-    </form>
+      <div class="spacer-12"></div>
+      <form method="POST" action="/newlist">
+        <button class="btn btn-primary" type="submit">Create new list</button>
+      </form>
+    </div>
+  </div>
 
-</body>
-</html>
+  <div class="card">
+    <div class="card-body">
+      <h2 class="h2">History</h2>
+      <p class="muted">Browse saved lists, edit items, or clear history.</p>
+      <div class="spacer-12"></div>
+      <a class="btn" href="/history">Open history</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <h2 class="h2">Reminders</h2>
+      <p class="muted">Set reminders so you never forget an upcoming payment.</p>
+      <div class="spacer-12"></div>
+      <a class="btn" href="/reminders">Manage reminders</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <h2 class="h2">Exports</h2>
+      <p class="muted">Download your lists as Excel or PDF.</p>
+      <div class="spacer-12"></div>
+      <form method="POST" action="/cvtExcel">
+        <button class="btn" type="submit">Open exports</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  (function () {
+    const grid = document.getElementById("calendarGrid");
+    const title = document.getElementById("calendarTitle");
+    const meta = document.getElementById("calendarMeta");
+    const prevBtn = document.getElementById("calPrev");
+    const nextBtn = document.getElementById("calNext");
+    const todayBtn = document.getElementById("calToday");
+
+    if (!grid || !title || !meta || !prevBtn || !nextBtn || !todayBtn) return;
+
+    const monthNames = [
+      "January","February","March","April","May","June",
+      "July","August","September","October","November","December"
+    ];
+
+    const today = new Date();
+    let cursor = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    function startOfWeekMonday(date) {
+      // JS getDay(): Sun=0 ... Sat=6. Convert so Mon=0 ... Sun=6
+      const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const day = (d.getDay() + 6) % 7;
+      d.setDate(d.getDate() - day);
+      return d;
+    }
+
+    function sameDay(a, b) {
+      return a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate();
+    }
+
+    function render() {
+      const year = cursor.getFullYear();
+      const month = cursor.getMonth();
+      title.textContent = `${monthNames[month]} ${year}`;
+      meta.textContent = `Today: ${today.toDateString()}`;
+
+      grid.innerHTML = "";
+
+      const firstOfMonth = new Date(year, month, 1);
+      const start = startOfWeekMonday(firstOfMonth);
+
+      for (let i = 0; i < 42; i++) {
+        const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+        const inMonth = d.getMonth() === month;
+
+        const cell = document.createElement("button");
+        cell.type = "button";
+        cell.className = "calendar-cell" +
+          (inMonth ? "" : " is-out") +
+          (sameDay(d, today) ? " is-today" : "");
+        cell.textContent = String(d.getDate());
+        cell.setAttribute("role", "gridcell");
+        cell.setAttribute("aria-label", d.toDateString());
+
+        grid.appendChild(cell);
+      }
+    }
+
+    prevBtn.addEventListener("click", () => {
+      cursor = new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1);
+      render();
+    });
+    nextBtn.addEventListener("click", () => {
+      cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+      render();
+    });
+    todayBtn.addEventListener("click", () => {
+      cursor = new Date(today.getFullYear(), today.getMonth(), 1);
+      render();
+    });
+
+    render();
+  })();
+</script>
+
+<script>
+  (function () {
+    const slider = document.getElementById("adSlider");
+    const track = document.getElementById("adTrack");
+    if (!slider || !track) return;
+
+    const slides = Array.from(track.querySelectorAll(".mini-slide"));
+    if (slides.length === 0) return;
+
+    let index = 0;
+    let timer = null;
+    const prefersReduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    function apply() {
+      track.style.transform = `translateX(-${index * 100}%)`;
+    }
+
+    function next() {
+      index = (index + 1) % slides.length;
+      apply();
+    }
+
+    function start() {
+      if (prefersReduced) return; 
+      stop();
+      timer = window.setInterval(next, 3000); 
+    }
+
+    function stop() {
+      if (timer) window.clearInterval(timer);
+      timer = null;
+    }
+
+    // Click/tap on the ad -> show next ad
+    slider.addEventListener("click", (e) => {
+      const link = e.target.closest(".ad-link");
+      if (!link) return;
+      e.preventDefault();
+      next();
+    });
+
+    // Pause auto while interacting
+    slider.addEventListener("mouseenter", stop);
+    slider.addEventListener("mouseleave", start);
+    slider.addEventListener("focusin", stop);
+    slider.addEventListener("focusout", start);
+
+    apply();
+    start();
+  })();
+</script>
+
+<%- include('partials/footer') %>

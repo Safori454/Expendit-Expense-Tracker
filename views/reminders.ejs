@@ -1,117 +1,67 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Reminders</title>
+<%- include('partials/header', { title: 'Reminders' }) %>
 
-    <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
+<div class="page-head">
+  <div>
+    <h1 class="h1">Reminders</h1>
+    <p class="muted">Schedule email reminders for lists and mark them as done.</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-ghost" href="/home">Dashboard</a>
+    <a class="btn btn-primary" href="/reminders/new">Add reminder</a>
+  </div>
+</div>
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        table, th, td {
-            border: 1px solid #ccc;
-        }
-
-        th, td {
-            padding: 10px;
-            text-align: left;
-        }
-
-        .status-pending {
-            color: black;
-            background: orange;
-            font-weight: bold;
-            padding: 4px 8px;
-            border-radius: 4px;
-        }
-
-        .status-sent {
-            color: white;
-            background: green;
-            font-weight: bold;
-            padding: 4px 8px;
-            border-radius: 4px;
-        }
-
-        button {
-            padding: 6px 10px;
-            margin: 2px;
-            cursor: pointer;
-        }
-        .btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; margin: 2px; }
-        .btn-delete { background: red; color: white; }
-        .btn-edit { background: blue; color: white; }
-        .btn-done { background: green; color: white; }
-    </style>
-</head>
-<body>
-
-    <h1>Reminders</h1>
-
-    <table>
-        <thead>
+<div class="card">
+  <div class="card-body">
+    <% if (!reminders || reminders.length === 0) { %>
+      <div class="alert">No reminders yet.</div>
+    <% } else { %>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
             <tr>
-                <th>Message</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Status</th>
-                <th>Options</th>
+              <th>Message</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Status</th>
+              <th>Actions</th>
             </tr>
-        </thead>
-
-        <tbody>
+          </thead>
+          <tbody>
             <% reminders.forEach(r => { %>
-                <tr>
-                    <td><%= r.message %></td>
-                    <td><%= new Date(r.reminder_date).toDateString() %></td>
-                    <td><%= r.reminder_time %></td>
+              <tr>
+                <td><%= r.message %></td>
+                <td><%= new Date(r.reminder_date).toDateString() %></td>
+                <td><%= r.reminder_time %></td>
+                <td>
+                  <% if (r.status === "sent") { %>
+                    <span class="badge badge-success">Sent</span>
+                  <% } else { %>
+                    <span class="badge badge-warning">Pending</span>
+                  <% } %>
+                </td>
+                <td>
+                  <div class="table-actions">
+                    <a class="btn btn-sm" href="/reminders/edit/<%= r.id %>">Edit</a>
 
-                    <!-- COLOR CODED STATUS -->
-                    <td>
-                        <% if (r.status === "sent") { %>
-                            <span class="status-sent">Sent</span>
-                        <% } else { %>
-                            <span class="status-pending">Pending</span>
-                        <% } %>
-                    </td>
+                    <% if (r.status !== "sent") { %>
+                      <form method="POST" action="/reminders/markdone/<%= r.id %>">
+                        <button class="btn btn-primary btn-sm" type="submit">Mark done</button>
+                      </form>
+                    <% } %>
 
-                    <td>
-                        <!-- DELETE -->
-                        <form method="POST" action="/reminders/delete/<%= r.id %>" style="display:inline;">
-                            <button class="btn btn-delete" type="submit">Delete</button>
-                        </form>
-
-                        <!-- EDIT -->
-                        <form method="GET" action="/reminders/edit/<%= r.id %>" style="display:inline;">
-                            <button class="btn btn-edit" type="submit">Edit</button>
-                        </form>
-
-                        <!-- MARK AS DONE -->
-                        <% if (r.status !== "sent") { %>
-                        <form method="POST" action="/reminders/markdone/<%= r.id %>" style="display:inline;">
-                            <button class="btn btn-done" type="submit">Mark as Done</button>
-                        </form>
-                        <% } %>
-
-                    </td>
-                </tr>
+                    <form method="POST" action="/reminders/delete/<%= r.id %>" onsubmit="return confirm('Delete this reminder?');">
+                      <button class="btn btn-danger btn-sm" type="submit">Delete</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
             <% }) %>
-        </tbody>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</div>
 
-    </table>
-
-    <br>
-    <form action="/home" method="GET" style="display:inline;">
-        <button type="submit">Home</button>
-    </form>
-    <form method="GET" action="/reminders/new">
-    <button>Add Reminder</button>
-</form>
-</body>
-</html>
+<%- include('partials/footer') %>
