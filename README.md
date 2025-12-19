@@ -52,7 +52,6 @@ Built with Node.js, Express, PostgreSQL, and EJS, it provides a simple, intuitiv
 
 ---
 ## Future Enhancement
-- Add React to Frontend
 - Add openAI api to interact with app
 - Conternarize in Docker
   
