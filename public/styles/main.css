@@ -60,19 +60,22 @@ body::after {
 body::before {
   content: "";
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   z-index: -2;
-  background-image: url("/images/expendit.png");
-  background-position: center;
+  background: url("/images/expendit.png") no-repeat center center;
   background-size: cover;
-  background-repeat: no-repeat;
+  -webkit-filter: grayscale(1) contrast(1.05);
   filter: grayscale(1) contrast(1.05);
   opacity: .12;
   pointer-events: none;
+  will-change: transform;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
+  -webkit-transform: translate3d(0,0,0);
+  transform: translate3d(0,0,0);
 }
 
 /* Make all elements using backdrop-filter Safari-friendly */
@@ -591,6 +594,10 @@ button, input, select, textarea{ font: inherit; }
 /* Auth (login/signup) */
 body.auth::before{
   opacity: .18;
+}
+
+body.auth .app-footer{
+  display: none;
 }
 
 .auth-shell{
