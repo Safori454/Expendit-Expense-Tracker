@@ -4,10 +4,9 @@
   "description": "Expendit is a web-based expense tracker that allows users to create, manage, and track expense lists, set reminders, and generate reports in PDF or Excel formats. \r Built with Node.js, Express, PostgreSQL, and EJS, it provides a simple, intuitive interface for personal financial management.",
   "main": "index.js",
   "scripts": {
-  "start": "node index.js",
-  "test": "echo \"Error: no test specified\" && exit 1"
-},
-
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Safori454/Expendit-Expense-Tracker.git"
@@ -21,11 +20,13 @@
   },
   "homepage": "https://github.com/Safori454/Expendit-Expense-Tracker#readme",
   "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.1",
     "cron": "^4.4.0",
+    "dns": "^0.2.2",
     "dotenv": "^17.2.3",
     "ejs": "^3.1.10",
     "exceljs": "^4.4.0",
