@@ -33,40 +33,47 @@ body {
   margin: 0;
   font-family: Poppins, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   color: var(--text);
-  background-color: var(--bg);
-  background-image:
-    radial-gradient(1200px 700px at 40% 10%, rgba(255,255,255,.10), transparent 60%),
-    radial-gradient(900px 600px at 90% 20%, rgba(255,255,255,.08), transparent 55%),
-    radial-gradient(900px 600px at 50% 100%, rgba(255,255,255,.06), transparent 55%),
-    linear-gradient(180deg, var(--bg), var(--bg-2));
+  background: #050505;
   position: relative;
   color-scheme: dark;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-body::before {
+body::after {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: url("/images/expendit.png") center / cover no-repeat;
+  background:
+    radial-gradient(1200px 700px at 40% 10%, rgba(255,255,255,.10), transparent 60%),
+    radial-gradient(900px 600px at 90% 20%, rgba(255,255,255,.08), transparent 55%),
+    radial-gradient(900px 600px at 50% 100%, rgba(255,255,255,.06), transparent 55%),
+    linear-gradient(180deg, #050505, #0b0b0b);
+  pointer-events: none;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background-image: url("/images/expendit.png");
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
   filter: grayscale(1) contrast(1.05);
   opacity: .12;
   pointer-events: none;
-  -webkit-backface-visibility: hidden; /* helps rendering on iOS */
+  -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
-
-/* Make all elements using backdrop-filter Safari-friendly */
-.app-header,
-.card,
-.dash-logo-frame,
-.auth-card {
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
 /* Sticky footer layout for all pages using the shared layout */
 body.app{
   min-height: 100vh;
