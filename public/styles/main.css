@@ -74,6 +74,16 @@ body::before {
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
 }
+
+/* Make all elements using backdrop-filter Safari-friendly */
+.app-header,
+.card,
+.dash-logo-frame,
+.auth-card {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
 /* Sticky footer layout for all pages using the shared layout */
 body.app{
   min-height: 100vh;
@@ -579,20 +589,10 @@ button, input, select, textarea{ font: inherit; }
 }
 
 /* Auth (login/signup) */
-
-/* body.auth{
-  background: linear-gradient(180deg, rgba(0,0,0,.92), rgba(0,0,0,.82));
-} */
-
 body.auth::before{
-  content: "";
-  position: fixed;
-  inset: 0; 
-  z-index: -1;
-  background: url("/images/expendit.png") center / cover no-repeat;
-  filter: grayscale(1) contrast(1.05);
   opacity: .18;
 }
+
 .auth-shell{
   min-height: calc(100vh - 44px);
   display: grid;
